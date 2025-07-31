@@ -49,9 +49,6 @@ use App\Http\Controllers\MessItemsPurchaseController;
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
 Route::resource('bookingtables', BookingTableController::class);
 Route::resource('categories', CategoryController::class);
 Route::resource('users', UserController::class);
