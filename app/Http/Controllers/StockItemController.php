@@ -30,6 +30,8 @@ class StockItemController extends Controller
             'total_quantity' => 'required|integer|min:0',
             'damaged_quantity' => 'required|integer|min:0',
             'available_qty' => 'required|integer|min:0',
+            'color' => 'nullable|string|max:50',
+            'size' => 'nullable|string|max:50',
         ]);
 
         $item = new StockItem();
@@ -37,6 +39,8 @@ class StockItemController extends Controller
         $item->total_quantity = $request->total_quantity;
         $item->damaged_quantity = $request->damaged_quantity;
         $item->available_qty = $request->available_qty;
+        $item->color = $request->color;
+        $item->size = $request->size;
 
         if ($request->item_type === 'product') {
             $item->product_id = $request->item_id;

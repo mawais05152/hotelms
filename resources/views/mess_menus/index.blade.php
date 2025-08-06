@@ -21,6 +21,7 @@
                     <th>Cooked By</th>
                     <th>Persons Served</th>
                     <th>Qty Made</th>
+                    <th>Qty Available</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -33,6 +34,7 @@
                         <td>{{ $menu->cooked_by }}</td>
                         <td>{{ $menu->cooked_for_persons }}</td>
                         <td>{{ $menu->quantity_made }}</td>
+                        <td>{{ $menu->available_quantity }}</td>
                         <td>
                             <!-- Edit -->
                             <button class="btn btn-sm btn-info" data-bs-toggle="modal"

@@ -21,8 +21,9 @@
                         <tr>
                             <th>ID</th>
                             <th>Type</th>
-                            <th>Item</th>
-                            <th>Variation</th>
+                            <th>Item Name</th>
+                            <th>Color</th>
+                            <th>Size</th>
                             <th>Damaged By</th>
                             <th>Qty</th>
                             <th>Date</th>
@@ -40,8 +41,10 @@
                                 {{-- <pre>{{ dd($item) }}</pre> --}}
 
                                 {{-- <pre>{{ dd($item->toArray()) }}</pre> --}}
-                                <td>{{ $item->stockItem->variation->product->name ?? '-' }}</td>
-                                <td>{{ $item->variation->unit ?? '-' }} - {{ $item->variation->size ?? '-' }}</td>
+                                {{-- <td>{{ $item->stockItem->name ?? 'Name not found' }}</td> --}}
+                                <td>{{ $item->product->name ?? '-' }}</td>
+                                <td>{{ $item->color ?? '-' }} </td>
+                                <td> {{ $item->size ?? '-' }}</td>
                                 <td>{{ $item->user->name ?? '-' }}</td>
                                 <td>{{ $item->quantity }}</td>
                                 <td>{{ $item->damage_date }}</td>
@@ -103,8 +106,8 @@
                     </div>
 
                     <div class="col-md-4 variation-fields">
-                        <label>Unit</label>
-                        <input type="text" name="unit" id="unitField" class="form-control" readonly>
+                        <label>Color</label>
+                        <input type="text" name="color" id="unitField" class="form-control" readonly>
                     </div>
 
                     <div class="col-md-4 variation-fields">

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->enum('item_type', ['product', 'asset']);
             $table->unsignedBigInteger('stock_item_id')->nullable();
             // $table->foreignId('variation_id')->nullable();
-            $table->string('unit')->nullable();
+            $table->string('color')->nullable();
             $table->string('size')->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->integer('quantity');

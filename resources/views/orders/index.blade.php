@@ -44,22 +44,33 @@
                             <td>
                                 <ul class="mb-1">
                                     @foreach ($order->orderItems as $item)
-                                        <li>
-                                            {{ $item->product->category->name ?? 'N/A' }} -
-                                            {{ $item->product->name }}
-                                            (Qty: {{ $item->quantity }}, Price: {{ $item->price }})
-                                        </li>
+                                        @if ($item->category_id == $dishesCategoryId)
+                                            <li>
+                                                Dishes - {{ $item->messMenu->meal_name }}
+                                                (Qty: {{ $item->quantity }}, Price: {{ $item->price }})
+                                            </li>
+                                        @else
+                                            <li>
+                                                {{ $item->product->category->name ?? 'N/A' }} -
+                                                {{ $item->product->name }}
+                                                (Qty: {{ $item->quantity }}, Price: {{ $item->price }})
+                                            </li>
+                                        @endif
                                     @endforeach
                                 </ul>
                             </td>
                             <td>
                                 <ul class="mb-1">
                                     @foreach ($order->orderItems as $item)
-                                        <li>
-                                            {{-- {{ $item->variation->size ?? 'N/A' }} {{ $item->variation->unit ?? '' }} --}}
-                                            {{-- Or use a custom format --}}
-                                            {{ $item->variation ? $item->variation->size . ' ' . $item->variation->unit : 'N/A' }}
-                                        </li>
+                                        @if ($item->category_id == $dishesCategoryId)
+                                            <li>
+                                                {{ $item->messMenu->dishVariation->name ?? 'N/A' }}
+                                            </li>
+                                        @else
+                                            <li>
+                                                {{ $item->variation ? $item->variation->size . ' ' . $item->variation->unit : 'N/A' }}
+                                            </li>
+                                        @endif
                                     @endforeach
                                 </ul>
                             </td>
@@ -84,6 +95,8 @@
                                 <button type="button" class="btn btn-secondary btn-sm printOrderBtn">Print</button>
                                 <a href="{{ url('order-status/index/' . $order->id) }}"
                                     class="btn btn-info btn-sm">History</a>
+                                <a href="{{ url('orders-process/' . $order->id) }}"
+                                    class="btn btn-warring btn-sm">Payment</a>
                             </td>
                         </tr>
                     @endforeach
@@ -186,7 +199,8 @@
                             <div class="row">
                                 <div class="col-md-4 mb-3">
                                     <label>Category</label>
-                                    <select id="categorySelect" class="form-select category-select" required>
+                                    <select id="categorySelect" name="category_id" class="form-select category-select"
+                                        required>
                                         <option value="">Select Category</option>
                                         @foreach ($categories as $cat)
                                             <option value="{{ $cat->id }}">{{ $cat->name }}</option>
@@ -195,7 +209,6 @@
                                 </div>
                                 <div class="col-md-3 mb-3">
                                     <label>Select Item</label>
-                                    <input type="hidden" name="product_id[]" value="">
                                     <select name="product_id[]" class="form-select product-select" required>
                                         <option value="">Select Item</option>
                                     </select>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Stripe\Stripe;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Product;
@@ -15,12 +16,198 @@ use App\Models\BookingTable;
 use Illuminate\Http\Request;
 use App\Models\DishVariation;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class OrderController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
+
+    public function index(Request $request, $order_id = null)
+    {
+        $pendingTableIds = Order::where('status', 'Pending')->pluck('booking_id')->toArray();
+
+        $categories = Category::all();
+        $products = Product::all();
+        $dishesCategoryId = Category::where('name', 'Dishes')->first()->id;
+
+        $orders = Order::with([
+            'bookingTable','orderedBy','deliveredBy','orderItems.product.category',
+            'orderItems.messMenu','orderItems.messMenu.dishVariation',
+        ])->get();
+
+        $tables = BookingTable::all();
+        $users = User::all();
+        $messMenus = MessMenu::all();
+
+        return view('orders.index', compact(
+            'orders','tables','users','categories','products','order_id',
+            'pendingTableIds','messMenus','dishesCategoryId'
+        ));
+    }
+
+    public function storeStatus(Request $request, Order $order)
+    {
+        $request->validate([
+            'status' => 'required|in:pending,taken,delivered,completed,cancelled,replaced',
+            'delivered_by' => 'nullable|exists:users,id',
+        ]);
+
+        $existingStatus = OrderStatus::where('order_id', $order->id)
+            ->where('status', $request->status)
+            ->first();
+
+        if ($existingStatus) {
+            $existingStatus->update([
+                'delivered_by' => $request->delivered_by,
+                'updated_at' => now(),
+            ]);
+        } else {
+            OrderStatus::create([
+                'order_id' => $order->id,
+                'status' => $request->status,
+                'delivered_by' => $request->delivered_by,
+            ]);
+        }
+        // ya kya error a raha tha is liye comment kiya tha
+        // $order->update([
+        //     'status' => $request->status,
+        // ]);
+
+        return redirect()->back()->with('success', 'Order status updated successfully.');
+    }
+
+
+    public function create()
+    {
+        $pendingTableIds = Order::where('status', 'Pending')->pluck('booking_id')->toArray();
+        $tables = BookingTable::all();
+        $users = User::all();
+        $categories = Category::all();
+        $products = Product::all();
+        return view('orders.create', compact('tables', 'users', 'categories', 'products', 'pendingTableIds'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'booking_id' => 'required',
+            'person' => 'required',
+            'order_type' => 'required',
+            'status' => 'required',
+            'order_by' => 'nullable',
+            'delivered_by' => 'nullable',
+            'product_id' => 'required|array',
+            'variation_id' => 'nullable|array',
+            'quantity' => 'required|array',
+            'price' => 'required|array',
+        ]);
+        $categoryId = $request->category_id;
+        $category = Category::find($categoryId);
+
+        DB::beginTransaction();
+        try {
+            if ($category->name == 'Dishes') {
+                foreach ($request->product_id as $key => $product_id) {
+                    $qty = $request->quantity[$key] ?? 0;
+                    $messMenu = MessMenu::find($product_id);
+                    if (!$messMenu) {
+                        throw new \Exception("Menu item not found for product ID: $product_id");
+                    }
+
+                    $variationId = $request->variation_id[$key] ?? null;
+                    if ($variationId) {
+                        $dishVariation = DishVariation::where('id', $variationId)
+                            ->where('mess_menu_id', $product_id)
+                            ->first();
+                        if (!$dishVariation) {
+                            throw new \Exception("Variation not found for product ID: $product_id");
+                        }
+                    }
+                }
+
+                // Create new order
+                $order = new Order();
+                $order->booking_id = $request->booking_id;
+                $order->person = $request->person;
+                $order->order_type = $request->order_type;
+                $order->time = $request->time;
+                $order->date = $request->date;
+                $order->status = $request->status;
+                $order->order_by = $request->order_by;
+                $order->delivered_by = $request->delivered_by;
+                $order->save();
+
+                // Create order items
+                foreach ($request->product_id as $key => $product_id) {
+                    $qty = $request->quantity[$key] ?? 0;
+                    $price = $request->price[$key] ?? 0;
+                    $variationId = $request->variation_id[$key] ?? null;
+
+                    $orderItem = new OrderItem();
+                    $orderItem->order_id = $order->id;
+                    $orderItem->product_id = $product_id;
+                    $orderItem->category_id = $categoryId;
+                    $orderItem->variation_id = $variationId;
+                    $orderItem->quantity = $qty;
+                    $orderItem->price = $price;
+                    $orderItem->sub_total = $qty * $price;
+                    $orderItem->save();
+
+                    $messMenu = MessMenu::find($product_id);
+                    $messMenu->available_quantity -= $qty;
+                    $messMenu->save();
+                }
+            } else {
+                foreach ($request->product_id as $key => $product_id) {
+                    $qty = $request->quantity[$key] ?? 0;
+                    $stockItem = StockItem::where('product_id', $product_id)->first();
+
+                    if (!$stockItem || $stockItem->available_qty < $qty) {
+                        throw new \Exception("Insufficient stock for product ID: $product_id");
+                    }
+                }
+
+                $order = new Order();
+                $order->booking_id = $request->booking_id;
+                $order->person = $request->person;
+                $order->order_type = $request->order_type;
+                $order->time = $request->time;
+                $order->date = $request->date;
+                $order->status = $request->status;
+                $order->order_by = $request->order_by;
+                $order->delivered_by = $request->delivered_by;
+                $order->save();
+
+                // Create order items and update stock
+                foreach ($request->product_id as $key => $product_id) {
+                    $qty = $request->quantity[$key] ?? 0;
+                    $price = $request->price[$key] ?? 0;
+                    $variation_id = $request->variation_id[$key] ?? null;
+
+                    $stockItem = StockItem::where('product_id', $product_id)->first();
+                    $stockItem->available_qty -= $qty;
+                    $stockItem->save();
+
+                    $orderItem = new OrderItem();
+                    $orderItem->order_id = $order->id;
+                    $orderItem->product_id = $product_id;
+                    $orderItem->category_id = Product::find($product_id)->category_id;
+                    $orderItem->variation_id = $variation_id;
+                    $orderItem->quantity = $qty;
+                    $orderItem->price = $price;
+                    $orderItem->sub_total = $qty * $price;
+                    $orderItem->save();
+                }
+            }
+            DB::commit();
+            return redirect()->route('orders.index')->with('success', 'Order saved successfully.');
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => 'Failed to save order. ' . $e->getMessage()]);
+        }
+    }
 
     public function getProductsByCategory($categoryId)
     {
@@ -78,215 +265,6 @@ class OrderController extends Controller
         }
         return response()->json($data);
     }
-
-    public function index(Request $request, $order_id = null)
-    {
-        $pendingTableIds = Order::where('status', 'Pending')->pluck('booking_id')->toArray();
-
-        $categories = Category::all();
-        $products = Product::all();
-
-        $orders = Order::with([
-            'bookingTable',
-            'orderedBy',
-            'deliveredBy',
-            'orderItems.product.category',
-            'messmenu',
-            // 'orderItems.variation',
-        ])->get();
-
-        $tables = BookingTable::all();
-        $users = User::all();
-        $messMenus = MessMenu::all();
-        return view('orders.index', compact('orders', 'tables', 'users', 'categories', 'products', 'order_id', 'pendingTableIds', 'messMenus'));
-    }
-
-    public function storeStatus(Request $request, Order $order)
-    {
-        $request->validate([
-            'status' => 'required|in:pending,taken,delivered,completed,cancelled,replaced',
-            'delivered_by' => 'nullable|exists:users,id',
-        ]);
-
-        $existingStatus = OrderStatus::where('order_id', $order->id)
-            ->where('status', $request->status)
-            ->first();
-
-        if ($existingStatus) {
-            $existingStatus->update([
-                'delivered_by' => $request->delivered_by,
-                'updated_at' => now(),
-            ]);
-        } else {
-            OrderStatus::create([
-                'order_id' => $order->id,
-                'status' => $request->status,
-                'delivered_by' => $request->delivered_by,
-            ]);
-        }
-
-        $order->update([
-            'status' => $request->status,
-        ]);
-
-        return redirect()->back()->with('success', 'Order status updated successfully.');
-    }
-
-
-    public function create()
-    {
-        $pendingTableIds = Order::where('status', 'Pending')->pluck('booking_id')->toArray();
-        $tables = BookingTable::all();
-        $users = User::all();
-        $categories = Category::all();
-        $products = Product::all();
-        return view('orders.create', compact('tables', 'users', 'categories', 'products', 'pendingTableIds'));
-    }
-
-
-//     public function store(Request $request)
-//     {
-//         $request->validate([
-//             'booking_id' => 'required',
-//             'person' => 'required',
-//             'order_type' => 'required',
-//             'status' => 'required',
-//             'order_by' => 'nullable',
-//             'delivered_by' => 'nullable',
-//             'product_id' => 'required|array',
-//             'variation_id' => 'nullable|array',
-//             'quantity' => 'required|array',
-//             'price' => 'required|array',
-//         ]);
-
-//         DB::beginTransaction();
-
-//         try {
-//             // foreach ($request->product_id as $key => $product_id) {
-//             //     $qty = $request->quantity[$key];
-
-//             //     // Check for variation if used
-//             //     $variation = Variation::where('product_id', $product_id)->first();
-//             //     $stockItem = StockItem::where('product_id', $product_id)->first();
-
-//             //     if (!$stockItem || $stockItem->available_qty < $qty) {
-//             //         return redirect()->route('orders.index')->withErrors(['error' => "Insufficient stock for product ID: $product_id"]);
-//             //     }
-//             // }
-
-//             $order = new Order();
-//             dd($request->all());
-//             $order->booking_id = $request->booking_id;
-//             $order->person = $request->person;
-//             $order->order_type = $request->order_type;
-//             $order->time = $request->time;
-//             $order->date = $request->date;
-//             $order->status = $request->status;
-//             $order->order_by = $request->order_by;
-//             $order->delivered_by = $request->delivered_by;
-//             $order->save();
-
-//             foreach ($request->product_id as $key => $product_id) {
-//                 $qty = $request->quantity[$key];
-//                 $price = $request->price[$key];
-//                 $stockItem = StockItem::where('product_id', $product_id)->first();
-
-//                 $orderItem = new OrderItem();
-//                 $orderItem->order_id = $order->id;
-//                 $orderItem->product_id = $product_id;
-//                 $orderItem->category_id = Product::find($product_id)->category_id;
-//                 $orderItem->quantity = $qty;
-//                 // $orderItem->variation_id = $variation_id;
-//                 $variation_id = $request->variation_id[$key] ?? null;
-// $orderItem->variation_id = $variation_id;
-//                 $orderItem->price = $price;
-//                 $orderItem->sub_total = $qty * $price;
-//                 $orderItem->save();
-
-//                 $stockItem->total_quantity -= $qty;
-//                 $stockItem->available_qty -= $qty;
-//                 $stockItem->save();
-//             }
-
-//             DB::commit();
-//             return redirect()->route('orders.index')->with('success', 'Order saved successfully.');
-//         } catch (\Exception $e) {
-//             DB::rollback();
-//             return back()->withErrors(['error' => 'Failed to save order. ' . $e->getMessage()]);
-//         }
-//     }
-
-public function store(Request $request)
-{
-    $request->validate([    
-        'booking_id' => 'required',
-        'person' => 'required',
-        'order_type' => 'required',
-        'status' => 'required',
-        'order_by' => 'nullable',
-        'delivered_by' => 'nullable',
-        'product_id' => 'required|array',
-        'variation_id' => 'nullable|array',
-        'quantity' => 'required|array',
-        'price' => 'required|array',
-    ]);
-
-    DB::beginTransaction();
-
-    try {
-        foreach ($request->product_id as $key => $product_id) {
-            $qty = $request->quantity[$key];
-            $stockItem = StockItem::where('product_id', $product_id)->first();
-
-            if (!$stockItem || $stockItem->available_qty < $qty) {
-                return redirect()->route('orders.index')->withErrors([
-                    'error' => "Insufficient stock for product ID: $product_id"
-                ]);
-            }
-        }
-
-        $order = new Order();
-        // dd($request->all());
-        $order->booking_id = $request->booking_id;
-        $order->person = $request->person;
-        $order->order_type = $request->order_type;
-        $order->time = $request->time;
-        $order->date = $request->date;
-        $order->status = $request->status;
-        $order->order_by = $request->order_by;
-        $order->delivered_by = $request->delivered_by;
-        $order->save();
-
-        foreach ($request->product_id as $key => $product_id) {
-            $qty = $request->quantity[$key];
-            $price = $request->price[$key];
-            $variation_id = $request->variation_id[$key] ?? null;
-
-            $stockItem = StockItem::where('product_id', $product_id)->first();
-
-            $orderItem = new OrderItem();
-            $orderItem->order_id = $order->id;
-            $orderItem->product_id = $product_id;
-            $orderItem->category_id = Product::find($product_id)->category_id;
-            $orderItem->variation_id = $variation_id;
-            $orderItem->quantity = $qty;
-            $orderItem->price = $price;
-            $orderItem->sub_total = $qty * $price;
-            $orderItem->save();
-
-            $stockItem->total_quantity -= $qty;
-            $stockItem->available_qty -= $qty;
-            $stockItem->save();
-        }
-
-        DB::commit();
-        return redirect()->route('orders.index')->with('success', 'Order saved successfully.');
-    } catch (\Exception $e) {
-        DB::rollback();
-        return back()->withErrors(['error' => 'Failed to save order. ' . $e->getMessage()]);
-    }
-}
-
 
     public function edit(Order $order)
     {
@@ -389,5 +367,96 @@ public function store(Request $request)
         ]);
 
         return back()->with('success', 'Status updated and history saved.');
+    }
+
+//     public function processOrders($id)
+// {
+//     $order = Order::findOrFail($id);
+
+//     return view('orders.pay.create', compact('order'));
+// }
+
+// public function ordersPay(Request $request, $id)
+// {
+//     $order = Order::findOrFail($id);
+
+//     $request->validate([
+//         'payment_method' => 'required',
+//         'amount' => 'required|numeric',
+//     ]);
+
+//     Stripe::setApiKey(env('STRIPE_SECRET'));
+
+//     try {
+//         $charge = \Stripe\Charge::create([
+//             'amount' => $request->amount * 100,
+//             'currency' => 'usd',
+//             'description' => 'Order Payment',
+//             'source' => $request->payment_method,
+//             'confirm' => true,
+//         ]);
+
+//         // Save or update order as paid here...
+//         $order->update(['status' => 'paid']);
+
+//         return redirect()->route('orders.index')->with('success', 'Payment successful!');
+//     } catch (\Stripe\Exception\CardException $e) {
+//         return back()->withErrors(['error' => 'Payment failed: ' . $e->getMessage()]);
+//     }
+// }
+
+public function ordersPay($id)
+    {
+        $product = Product::findOrFail($id);
+        $user = User::find($product->user_id);
+        \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+        $intent = \Stripe\SetupIntent::create([
+            'automatic_payment_methods' => [
+                'enabled' => true,
+                'allow_redirects' => 'never',
+            ],
+        ]);
+
+        return view('orders.pay.create', [
+            'product' => $product,
+            'user' => $user,
+            'intent' => $intent,
+        ]);
+    }
+
+    public function processOrders(Request $request)
+    {
+        \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+        $product = Product::find($request->product_id);
+        $user = User::find($product->user_id);
+        $paymentMethod = $request->input('payment_method');
+
+        $stripeCustomer = $user->createOrGetStripeCustomer();
+        $user->updateDefaultPaymentMethod($paymentMethod);
+
+        try {
+            $paymentIntent = \Stripe\PaymentIntent::create([
+                'amount' => $product->price * 100,
+                'currency' => 'usd',
+                'payment_method' => $paymentMethod,
+                'customer' => $stripeCustomer->id,
+                'automatic_payment_methods' => [
+                    'enabled' => true,
+                    'allow_redirects' => 'never',
+                ],
+            ]);
+
+            $paymentIntent->confirm();
+        } catch (\Exception $e) {
+            return back()->withErrors(['message' => 'Error creating charge. ' . $e->getMessage()]);
+        }
+        $product->status = 'paid';
+        $product->save();
+        if (!$user->stripe_id) {
+            $user->stripe_id = $stripeCustomer->id;
+            $user->save();
+        }
+
+        return redirect('orders')->with('success', 'Payment successful and product status updated.');
     }
 }

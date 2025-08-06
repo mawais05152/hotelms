@@ -8,16 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class StockItem extends Model
 {
     use HasFactory;
-    // protected $fillable = [
-    //     'name',
-    //     'item_type',
-    //     'product_id',
-    //     'asset_id',
-    //     'price',
-    //     'total_quantity',
-    //     'damaged_quantity',
-    //     'available_qty'
-    // ];
+
         protected $fillable = [
         'item_type',
         'product_id',
@@ -28,6 +19,8 @@ class StockItem extends Model
         'damaged_quantity',
         'price',
         'unit',
+        'color',
+        'size',
     ];
 
 
