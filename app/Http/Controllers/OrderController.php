@@ -3,20 +3,16 @@
 namespace App\Http\Controllers;
 
 use Stripe\Stripe;
-use App\Models\User;
+use Stripe\Customer;
 use App\Models\Order;
-use App\Models\Product;
-use App\Models\Category;
-use App\Models\MessMenu;
-use App\Models\OrderItem;
-use App\Models\StockItem;
-use App\Models\Variation;
+use Stripe\PaymentIntent;
+use App\Events\OrderPlaced;
 use App\Models\OrderStatus;
 use App\Models\BookingTable;
 use Illuminate\Http\Request;
-use App\Models\DishVariation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Models\{User, Category, Product, MessMenu, OrderItem, StockItem, Variation, DishVariation};
 
 class OrderController extends Controller
 {
@@ -24,17 +20,22 @@ class OrderController extends Controller
      * Display a listing of the resource.
      */
 
+    // public function index($order_id = null, Request $request)
     public function index(Request $request, $order_id = null)
     {
         $pendingTableIds = Order::where('status', 'Pending')->pluck('booking_id')->toArray();
 
-        $categories = Category::all();
+        $categories = Category::get();
         $products = Product::all();
         $dishesCategoryId = Category::where('name', 'Dishes')->first()->id;
 
         $orders = Order::with([
-            'bookingTable','orderedBy','deliveredBy','orderItems.product.category',
-            'orderItems.messMenu','orderItems.messMenu.dishVariation',
+            'bookingTable',
+            'orderedBy',
+            'deliveredBy',
+            'orderItems.product.category',
+            'orderItems.messMenu',
+            'orderItems.messMenu.dishVariation',
         ])->get();
 
         $tables = BookingTable::all();
@@ -42,8 +43,15 @@ class OrderController extends Controller
         $messMenus = MessMenu::all();
 
         return view('orders.index', compact(
-            'orders','tables','users','categories','products','order_id',
-            'pendingTableIds','messMenus','dishesCategoryId'
+            'orders',
+            'tables',
+            'users',
+            'categories',
+            'products',
+            'order_id',
+            'pendingTableIds',
+            'messMenus',
+            'dishesCategoryId'
         ));
     }
 
@@ -201,7 +209,9 @@ class OrderController extends Controller
                     $orderItem->save();
                 }
             }
+            //  event(new OrderPlaced($order));
             DB::commit();
+            event(new OrderPlaced($order));
             return redirect()->route('orders.index')->with('success', 'Order saved successfully.');
         } catch (\Exception $e) {
             DB::rollback();
@@ -239,14 +249,10 @@ class OrderController extends Controller
 
     public function getDishVariations($dishId)
     {
-        $variations = DishVariation::where('mess_menu_id', $dishId)->get();
+        $variations = DishVariation::where('mess_menu_id', $dishId)->select('id','variation_name','price')->get();
         $data = [];
-        foreach ($variations as $variation) {
-            $data[] = [
-                'id' => $variation->id,
-                'variation_name' => $variation->name,
-                'price' => $variation->price
-            ];
+        if(!is_null($variations)) {
+            $data = $variations->toArray();
         }
         return response()->json($data);
     }
@@ -268,6 +274,7 @@ class OrderController extends Controller
 
     public function edit(Order $order)
     {
+
         $tables = BookingTable::all();
         return view('orders.edit', compact('order', 'tables'));
     }
@@ -275,7 +282,6 @@ class OrderController extends Controller
     public function show($id)
     {
         $order = Order::with(['bookingTable', 'orderItems.product'])->find($id);
-
         if (!$order) {
             return response()->json(['error' => 'Order not found'], 404);
         }
@@ -369,94 +375,39 @@ class OrderController extends Controller
         return back()->with('success', 'Status updated and history saved.');
     }
 
-//     public function processOrders($id)
-// {
-//     $order = Order::findOrFail($id);
-
-//     return view('orders.pay.create', compact('order'));
-// }
-
-// public function ordersPay(Request $request, $id)
-// {
-//     $order = Order::findOrFail($id);
-
-//     $request->validate([
-//         'payment_method' => 'required',
-//         'amount' => 'required|numeric',
-//     ]);
-
-//     Stripe::setApiKey(env('STRIPE_SECRET'));
-
-//     try {
-//         $charge = \Stripe\Charge::create([
-//             'amount' => $request->amount * 100,
-//             'currency' => 'usd',
-//             'description' => 'Order Payment',
-//             'source' => $request->payment_method,
-//             'confirm' => true,
-//         ]);
-
-//         // Save or update order as paid here...
-//         $order->update(['status' => 'paid']);
-
-//         return redirect()->route('orders.index')->with('success', 'Payment successful!');
-//     } catch (\Stripe\Exception\CardException $e) {
-//         return back()->withErrors(['error' => 'Payment failed: ' . $e->getMessage()]);
-//     }
-// }
-
-public function ordersPay($id)
+    public function processOrders($id)
     {
-        $product = Product::findOrFail($id);
-        $user = User::find($product->user_id);
-        \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
-        $intent = \Stripe\SetupIntent::create([
-            'automatic_payment_methods' => [
-                'enabled' => true,
-                'allow_redirects' => 'never',
-            ],
-        ]);
+        $order = Order::findOrFail($id);
 
-        return view('orders.pay.create', [
-            'product' => $product,
-            'user' => $user,
-            'intent' => $intent,
-        ]);
+        return view('orders.pay.create', compact('order'));
     }
 
-    public function processOrders(Request $request)
+    public function ordersPay(Request $request, $id)
     {
-        \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
-        $product = Product::find($request->product_id);
-        $user = User::find($product->user_id);
-        $paymentMethod = $request->input('payment_method');
+        $order = Order::findOrFail($id);
+        $orderAmount = $order->orderItems->sum('price');
 
-        $stripeCustomer = $user->createOrGetStripeCustomer();
-        $user->updateDefaultPaymentMethod($paymentMethod);
+        $request->validate([
+            'payment_method' => 'required',
+        ]);
+
+        \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
 
         try {
-            $paymentIntent = \Stripe\PaymentIntent::create([
-                'amount' => $product->price * 100,
+            \Stripe\PaymentIntent::create([
+                'amount' => $orderAmount * 100,
                 'currency' => 'usd',
-                'payment_method' => $paymentMethod,
-                'customer' => $stripeCustomer->id,
-                'automatic_payment_methods' => [
-                    'enabled' => true,
-                    'allow_redirects' => 'never',
-                ],
+                'description' => 'Order Payment',
+                'payment_method' => $request->payment_method,
+                'confirm' => true,
+                'payment_method_types' => ['card'],
             ]);
 
-            $paymentIntent->confirm();
-        } catch (\Exception $e) {
-            return back()->withErrors(['message' => 'Error creating charge. ' . $e->getMessage()]);
-        }
-        $product->status = 'paid';
-        $product->save();
-        if (!$user->stripe_id) {
-            $user->stripe_id = $stripeCustomer->id;
-            $user->save();
-        }
+            $order->update(['payment_status' => 'paid']);
 
-        return redirect('orders')->with('success', 'Payment successful and product status updated.');
+            return redirect()->route('orders.index')->with('success', 'Payment successful!');
+        } catch (\Stripe\Exception\CardException $e) {
+            return back()->withErrors(['error' => 'Payment failed: ' . $e->getMessage()]);
+        }
     }
 }
