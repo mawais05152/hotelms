@@ -27,6 +27,7 @@
                         <th>Variation</th>
                         <th>Total</th>
                         <th>Status</th>
+                        <th>Payment Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -36,30 +37,43 @@
                             <td>{{ $order->id }}</td>
                             <td>{{ $order->bookingTable->table_number ?? 'N/A' }}</td>
                             <td>{{ $order->person }}</td>
-                            <td>{{ $order->orderedBy->name }}</td>
-                            <td>{{ $order->deliveredBy->name }}</td>
+                            <td>{{ $order->orderedBy ? $order->orderedBy->name : 'N/A' }}</td>
+                            <td>{{ $order->deliveredBy ? $order->deliveredBy->name : 'N/A' }}</td>
+                            {{-- <td>{{ $order->orderedBy->name }}</td>
+                            <td>{{ $order->deliveredBy->name }}</td> --}}
                             <td>{{ $order->order_type }}</td>
                             <td>{{ $order->date }}</td>
                             <td>{{ $order->time }}</td>
                             <td>
                                 <ul class="mb-1">
                                     @foreach ($order->orderItems as $item)
-                                        <li>
-                                            {{ $item->product->category->name ?? 'N/A' }} -
-                                            {{ $item->product->name }}
-                                            (Qty: {{ $item->quantity }}, Price: {{ $item->price }})
-                                        </li>
+                                        @if ($item->category_id == $dishesCategoryId)
+                                            <li>
+                                                Dishes - {{ $item->messMenu->meal_name }}
+                                                (Qty: {{ $item->quantity }}, Price: {{ $item->price }})
+                                            </li>
+                                        @else
+                                            <li>
+                                                {{ $item->product->category->name ?? 'N/A' }} -
+                                                {{ $item->product->name }}
+                                                (Qty: {{ $item->quantity }}, Price: {{ $item->price }})
+                                            </li>
+                                        @endif
                                     @endforeach
                                 </ul>
                             </td>
                             <td>
                                 <ul class="mb-1">
                                     @foreach ($order->orderItems as $item)
-                                        <li>
-                                            {{-- {{ $item->variation->size ?? 'N/A' }} {{ $item->variation->unit ?? '' }} --}}
-                                            {{-- Or use a custom format --}}
-                                            {{ $item->variation ? $item->variation->size . ' ' . $item->variation->unit : 'N/A' }}
-                                        </li>
+                                        @if ($item->category_id == $dishesCategoryId)
+                                            <li>
+                                                {{ $item->messMenu->dishVariation->name ?? 'N/A' }}
+                                            </li>
+                                        @else
+                                            <li>
+                                                {{ $item->variation ? $item->variation->size . ' ' . $item->variation->unit : 'N/A' }}
+                                            </li>
+                                        @endif
                                     @endforeach
                                 </ul>
                             </td>
@@ -71,6 +85,7 @@
                                     {{ $order->status }}
                                 </a>
                             </td>
+                            <td>{{ $order->payment_status }}</td>
                             <td class="d-flex flex-wrap gap-1">
                                 <button class="btn btn-warning btn-sm editOrderBtn"
                                     data-order='@json($order)'>Edit</button>
@@ -84,6 +99,8 @@
                                 <button type="button" class="btn btn-secondary btn-sm printOrderBtn">Print</button>
                                 <a href="{{ url('order-status/index/' . $order->id) }}"
                                     class="btn btn-info btn-sm">History</a>
+                                <a href="{{ url('orders-process/' . $order->id) }}"
+                                    class="btn btn-primary btn-sm">Payment</a>
                             </td>
                         </tr>
                     @endforeach
@@ -186,7 +203,8 @@
                             <div class="row">
                                 <div class="col-md-4 mb-3">
                                     <label>Category</label>
-                                    <select id="categorySelect" class="form-select category-select" required>
+                                    <select id="categorySelect" name="category_id" class="form-select category-select"
+                                        required>
                                         <option value="">Select Category</option>
                                         @foreach ($categories as $cat)
                                             <option value="{{ $cat->id }}">{{ $cat->name }}</option>
@@ -195,7 +213,6 @@
                                 </div>
                                 <div class="col-md-3 mb-3">
                                     <label>Select Item</label>
-                                    <input type="hidden" name="product_id[]" value="">
                                     <select name="product_id[]" class="form-select product-select" required>
                                         <option value="">Select Item</option>
                                     </select>
@@ -587,8 +604,7 @@
         $(document).ready(function() {
             $(document).on('click', '.printOrderBtn', function() {
                 let row = $(this).closest('tr').clone();
-                row.find('td:last').html(''); // Remove action buttons
-
+                row.find('td:last').html('');
                 // Only extract <td> elements, not full <tr>
                 let rowContent = row.html().trim();
 
@@ -660,56 +676,5 @@
             });
         });
     </script>
-    {{-- <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        function fetchItems(categoryId, productSelect) {
-            fetch(`/api/category/${categoryId}/items`)
-                .then(res => res.json())
-                .then(data => {
-                    productSelect.innerHTML = `<option value="">Select Item</option>`;
-                    data.items.forEach(item => {
-                        const option = document.createElement('option');
-                        option.value = item.id;
-                        option.text = item.name;
-                        productSelect.appendChild(option);
-                    });
-                });
-        }
 
-        function fetchVariations(itemId, variationSelect) {
-            fetch(`/api/item/${itemId}/variations`)
-                .then(res => res.json())
-                .then(data => {
-                    variationSelect.innerHTML = `<option value="">Select Variation</option>`;
-                    data.variations.forEach(variation => {
-                        const option = document.createElement('option');
-                        option.value = variation.id;
-                        option.text = `${variation.name} - Rs. ${variation.price}`;
-                        variationSelect.appendChild(option);
-                    });
-                });
-        }
-
-        // On category change
-        document.body.addEventListener('change', function (e) {
-            if (e.target.classList.contains('category-select')) {
-                const categoryId = e.target.value;
-                const wrapper = e.target.closest('.row');
-                const productSelect = wrapper.querySelector('.product-select');
-                const variationSelect = wrapper.querySelector('.variation-select');
-                productSelect.innerHTML = '<option value="">Loading...</option>';
-                fetchItems(categoryId, productSelect);
-                variationSelect.innerHTML = '<option value="">Select Variation</option>';
-            }
-
-            if (e.target.classList.contains('product-select')) {
-                const itemId = e.target.value;
-                const wrapper = e.target.closest('.row');
-                const variationSelect = wrapper.querySelector('.variation-select');
-                variationSelect.innerHTML = '<option value="">Loading...</option>';
-                fetchVariations(itemId, variationSelect);
-            }
-        });
-    });
-</script> --}}
 @endsection

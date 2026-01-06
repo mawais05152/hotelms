@@ -29,14 +29,14 @@ class UserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'password' => ['required', Password::min(8)->letters()->numbers()->symbols()],
             'role' => ['required', 'string', 'in:Admin,Waiter'],
         ]);
-            // if ($request->role === 'Admin') {
-            //     if (!Auth::check() || Auth::user()->role !== 'Admin') {
-            //         return redirect()->back()->withErrors(['role' => 'You do not have permission to register an Admin user.']);
-            //     }
-            // }
+            if ($request->role === 'Admin') {
+                if (!Auth::check() || Auth::user()->role !== 'Admin') {
+                    return redirect()->back()->withErrors(['role' => 'You do not have permission to register an Admin user.']);
+                }
+            }
 
        User::create([
     // dd($request->all()),

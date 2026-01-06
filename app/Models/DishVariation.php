@@ -20,5 +20,3 @@ class DishVariation extends Model
         return $this->belongsTo(MessMenu::class, 'mess_menu_id');
     }
 }
-
-

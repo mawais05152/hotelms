@@ -31,7 +31,7 @@
                             <th>Name</th>
                             <th>Price</th>
                             <th>Total Qty</th>
-                            <th>Total Price</th>
+                            {{-- <th>Total Price</th> --}}
                             <th>Damaged Qty</th>
                             <th>Available Qty</th>
                             {{-- <th>Unit</th>
@@ -58,7 +58,7 @@
                                 {{-- <td>{{ $item->name }}</td> --}}
                                 <td>{{ $item->price ?? '-' }}</td>
                                 <td>{{ $item->total_quantity }}</td>
-                                <td>{{ $item->total_cost }}</td>
+                                {{-- <td>{{ $item->total_cost }}</td> --}}
                                 <td>{{ $item->damaged_quantity }}</td>
                                 <td>{{ $item->available_qty }}</td>
 
@@ -74,7 +74,6 @@
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                                     </form>
-                                    <!-- Variation Modal -->
                                     <a href="javascript:void(0);" onclick="showVariations({{ $item->product_id }})"
                                     class="btn btn-info btn-sm">Show Variations</a>
                                     {{-- <button type="button" class="btn btn-secondary btn-sm printBtn"
@@ -126,8 +125,8 @@
                     </div>
 
                     <div class="col-md-6">
-                        <label>Unit</label>
-                        <input type="text" name="unit" id="unitField" class="form-control" readonly>
+                        <label>Color</label>
+                        <input type="text" name="color" id="unitField" class="form-control" readonly>
                     </div>
 
                     <div class="col-md-6">
@@ -173,7 +172,6 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body" id="variationBody">
-        <!-- Variations will be loaded here -->
       </div>
     </div>
   </div>
@@ -183,8 +181,6 @@
 
 @endsection
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<!-- Bootstrap JS (with Popper) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 @push('scripts')
     <script>

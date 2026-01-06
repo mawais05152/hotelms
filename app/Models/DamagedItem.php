@@ -22,9 +22,9 @@ class DamagedItem extends Model
     ];
 
     public function stockItem()
-{
-    return $this->belongsTo(StockItem::class, 'stock_item_id');
-}
+    {
+        return $this->belongsTo(StockItem::class);
+    }
 
     public function variation()
     {

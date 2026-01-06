@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Order extends Model
 {
     use HasFactory;
-    protected $fillable = ['booking_table_id', 'person', 'date', 'time', 'status'];
+    protected $fillable = ['booking_table_id', 'person', 'date', 'time', 'status','payment_status'];
 
     public function bookingTable()
     {

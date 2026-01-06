@@ -49,9 +49,6 @@ use App\Http\Controllers\MessItemsPurchaseController;
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
 Route::resource('bookingtables', BookingTableController::class);
 Route::resource('categories', CategoryController::class);
 Route::resource('users', UserController::class);
@@ -87,6 +84,11 @@ Route::get('order-status/index/{id}', [OrderStatusController::class, 'index']);
 Route::get('/get-products-by-category/{categoryId}', [OrderController::class, 'getProductsByCategory']);
 Route::get('/get-dish-variations/{dishId}', [OrderController::class, 'getDishVariations']);
 Route::get('/get-product-variations/{productId}', [OrderController::class, 'getProductVariations']);
+
+// Route::get('/orders-process/{id}', [OrderController::class, 'processOrders'])->name('orders.pay.create');
+// Route::post('/orders-pay/{id}', [OrderController::class, 'Orderspay'])->name('orders.pay.store');
+Route::get('/orders-process/{id}', [OrderController::class, 'processOrders'])->name('orders.pay.create');
+Route::post('/orders-pay/{id}', [OrderController::class, 'ordersPay'])->name('orders.pay.store');
 
 //test
 Route::get('/get-meal_names-by-category/{categoryId}', [OrderController::class, 'index']);
@@ -135,10 +137,6 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 
-// //test
-// Route::get('/get-products/{categoryId}', [ProductController::class, 'getProducts']);
-// //
-// Route::get('/get-products-or-meals-by-category/{categoryId}', [OrderController::class, 'getItemsByCategory']);
-// Route::get('/get-variations/{itemId}/{type}', [OrderController::class, 'getVariations']);
+
 
 
