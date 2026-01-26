@@ -11,23 +11,21 @@ use App\Models\OrderStatus;
 use App\Models\BookingTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Stripe\Exception\CardException;
 use Illuminate\Support\Facades\Auth;
 use App\Models\{User, Category, Product, MessMenu, OrderItem, StockItem, Variation, DishVariation};
 
 class OrderController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-
-    // public function index($order_id = null, Request $request)
     public function index(Request $request, $order_id = null)
     {
         $pendingTableIds = Order::where('status', 'Pending')->pluck('booking_id')->toArray();
 
         $categories = Category::get();
         $products = Product::all();
-        $dishesCategoryId = Category::where('name', 'Dishes')->first()->id;
+        // $dishesCategoryId = Category::where('name', 'Dishes')->first()->id;
+        $dishesCategory = Category::where('name', 'Dishes')->first();
+        $dishesCategoryId = $dishesCategory ? $dishesCategory->id : null;
 
         $orders = Order::with([
             'bookingTable',
@@ -406,7 +404,7 @@ class OrderController extends Controller
             $order->update(['payment_status' => 'paid']);
 
             return redirect()->route('orders.index')->with('success', 'Payment successful!');
-        } catch (\Stripe\Exception\CardException $e) {
+        } catch (CardException $e) {
             return back()->withErrors(['error' => 'Payment failed: ' . $e->getMessage()]);
         }
     }

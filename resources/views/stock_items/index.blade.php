@@ -67,15 +67,17 @@
                                 <td>
                                     <a href="{{ route('stock-items.index', ['edit' => $item->id]) }}"
                                         class="btn btn-warning btn-sm">Edit</a>
-                                    <form action="{{ route('stock-items.destroy', $item->id) }}" method="POST"
-                                        class="d-inline"
+                                    <form action="{{ route('stock-items.destroy', $item->id) }}" method="POST" class="d-inline"
                                         onsubmit="return confirm('Are you sure you want to delete this item?')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                                     </form>
-                                    <a href="javascript:void(0);" onclick="showVariations({{ $item->product_id }})"
-                                    class="btn btn-info btn-sm">Show Variations</a>
+                                    @if($item->item_type === 'product' && $item->variation_id)
+                                        <a href="javascript:void(0);" onclick="showVariations({{ $item->id }})" class="btn btn-info btn-sm">
+                                            Show Variations
+                                        </a>
+                                    @endif
                                     {{-- <button type="button" class="btn btn-secondary btn-sm printBtn"
                                         data-id="{{ $item->id }}">Print</button> --}}
                                 </td>
@@ -258,11 +260,11 @@
     </script>
 
 <script>
-  function showVariations(productId) {
-    $.get(`/products/${productId}/variations`, function(data) {
-      $('#variationBody').html(data);
-      $('#variationModal').modal('show');
+  function showVariations(stockItemId) {
+    $.get(`/stock-items/${stockItemId}/variation`, function(data) {
+        $('#variationBody').html(data);
+        $('#variationModal').modal('show');
     });
-  }
+}
 </script>
 @endpush

@@ -7,8 +7,7 @@
                 <div class="card shadow">
                     <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                         <span>Variation List</span>
-                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#createModal">+ Add
-                            New</button>
+                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#createModal">+ Add New</button>
                     </div>
 
                     <div class="card-body">
@@ -38,8 +37,7 @@
                                         <td>{{ $variation->price }}</td>
                                         <td>{{ $variation->created_at->format('Y-m-d') }}</td>
                                         <td>
-                                            <button class="btn btn-sm btn-warning" data-bs-toggle="modal"
-                                                data-bs-target="#editModal{{ $variation->id }}">Edit</button>
+                                            <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ $variation->id }}">Edit</button>
                                         </td>
                                     </tr>
                                 @empty
@@ -76,8 +74,8 @@
                         </div>
 
                         <div class="form-group mb-3">
-                            <label>Unit</label>
-                            <input type="text" name="unit" class="form-control" placeholder="e.g. bottle" required>
+                            <label>Color</label>
+                            <input type="text" name="unit" class="form-control" placeholder="e.g. Color">
                         </div>
 
                         <div class="form-group mb-3">

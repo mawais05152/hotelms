@@ -122,30 +122,34 @@
                     class="list-group-item list-group-item-action {{ Request::is('products') ? 'active' : '' }}">
                     <i class="fas fa-box-open me-2"></i> Products
                 </a>
+                 <a href="/variations"
+                    class="list-group-item list-group-item-action {{ Request::is('variations*') ? 'active' : '' }}">
+                    <i class="fas fa-file-invoice-dollar me-2"></i> Variations
+                </a>
                 <a href="/orders"
                     class="list-group-item list-group-item-action {{ Request::is('orders*') ? 'active' : '' }}">
                     <i class="fas fa-receipt me-2"></i> Orders
                 </a>
-                <a href="/payments"
+                {{-- <a href="/payments"
                     class="list-group-item list-group-item-action {{ Request::is('payments*') ? 'active' : '' }}">
                     <i class="fas fa-money-bill-wave me-2"></i> Payments
-                </a>
-                <a href="/profile"
+                </a> --}}
+                {{-- <a href="/profile"
                     class="list-group-item list-group-item-action {{ Request::is('profile') ? 'active' : '' }}">
                     <i class="fas fa-user me-2"></i> Profile
-                </a>
-                <a href="/product-sales-report"
+                </a> --}}
+                {{-- <a href="/product-sales-report"
                     class="list-group-item list-group-item-action {{ Request::is('product-sales-report*') ? 'active' : '' }}">
                     <i class="fas fa-chart-bar me-2"></i> Product Sales Report
-                </a>
-                <a href="/customer-feedback"
+                </a> --}}
+                {{-- <a href="/customer-feedback"
                     class="list-group-item list-group-item-action {{ Request::is('customer-feedback*') ? 'active' : '' }}">
                     <i class="fas fa-comments me-2"></i> Customer Feedback
-                </a>
-                <a href="/expenses"
+                </a> --}}
+                {{-- <a href="/expenses"
                     class="list-group-item list-group-item-action {{ Request::is('expenses*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar me-2"></i> Expenses
-                </a>
+                </a> --}}
                 <a href="/stock-items"
                     class="list-group-item list-group-item-action {{ Request::is('stock-items*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar me-2"></i> stockInventory
@@ -154,21 +158,18 @@
                     class="list-group-item list-group-item-action {{ Request::is('restaurant-assets*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar me-2"></i> Restauant Assets
                 </a>
-                 <a href="/damaged_items"
+                 {{-- <a href="/damaged_items"
                     class="list-group-item list-group-item-action {{ Request::is('damaged_items*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar me-2"></i> Damaged Items
-                </a>
+                </a> --}}
                  <a href="/purchases"
                     class="list-group-item list-group-item-action {{ Request::is('purchases*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar me-2"></i> Purchases
                 </a>
-                 <a href="/variations"
-                    class="list-group-item list-group-item-action {{ Request::is('variations*') ? 'active' : '' }}">
-                    <i class="fas fa-file-invoice-dollar me-2"></i> Variations
-                </a>
+
                  <a href="/mess_menus"
                     class="list-group-item list-group-item-action {{ Request::is('mess_menus*') ? 'active' : '' }}">
-                    <i class="fas fa-file-invoice-dollar me-2"></i> Mess Menus
+                    <i class="fas fa-file-invoice-dollar me-2"></i> Shif Menus
                 </a>
                  <a href="/menu-materials"
                     class="list-group-item list-group-item-action {{ Request::is('menu-materials*') ? 'active' : '' }}">
@@ -178,14 +179,14 @@
                     class="list-group-item list-group-item-action {{ Request::is('mess_items_purchases*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar me-2"></i> Mess Items Purchases
                 </a>
-                 <a href="/mess-distributions"
+                 {{-- <a href="/mess-distributions"
                     class="list-group-item list-group-item-action {{ Request::is('mess-distributions*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar me-2"></i> Mess Distributions
                 </a>
                  <a href="/mess-finances"
                     class="list-group-item list-group-item-action {{ Request::is('mess-finances*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar me-2"></i> Mess Finances
-                </a>
+                </a> --}}
                  <a href="/dish_variations"
                     class="list-group-item list-group-item-action {{ Request::is('dish_variations*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar me-2"></i> Dishes Variations

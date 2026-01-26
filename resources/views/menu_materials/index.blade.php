@@ -17,7 +17,7 @@
                     <tr>
                         <th>ID</th>
                         {{-- <th>Mess Name</th> --}}
-                        <th>Matrial Use Name</th>
+                        <th>Mess Matrial Name</th>
                         <th>Quantity</th>
                         <th>Unit</th>
                         <th>Actions</th>

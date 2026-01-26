@@ -25,13 +25,13 @@ class VariationController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'unit' => 'required',
-            'size' => 'required',
-            'price' => 'required',
+            'product_id' => 'required|exists:products,id',
+            'size'  => 'required',
+            'price' => 'required|numeric',
+            'unit'  => 'nullable',
         ]);
 
         $variation = new Variation();
-        // dd($request);
         $variation->product_id = $request->product_id;
         $variation->unit = $request->unit;
         $variation->size = $request->size;

@@ -34,20 +34,7 @@ use App\Http\Controllers\MessDistributionController;
 use App\Http\Controllers\AssetPriceHistoryController;
 use App\Http\Controllers\MessItemsPurchaseController;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|///
-|///Route::get('/orders/{order_id}/summary', [OrderItemController::class, 'orderSummary']);
 
-
-| Here is where you can register web routes for your application. These
-  Route::get('/orders/check/{id}', [OrderItemController::class, 'checkOrder']);
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
 
 Route::resource('bookingtables', BookingTableController::class);
 Route::resource('categories', CategoryController::class);
@@ -85,21 +72,19 @@ Route::get('/get-products-by-category/{categoryId}', [OrderController::class, 'g
 Route::get('/get-dish-variations/{dishId}', [OrderController::class, 'getDishVariations']);
 Route::get('/get-product-variations/{productId}', [OrderController::class, 'getProductVariations']);
 
-// Route::get('/orders-process/{id}', [OrderController::class, 'processOrders'])->name('orders.pay.create');
-// Route::post('/orders-pay/{id}', [OrderController::class, 'Orderspay'])->name('orders.pay.store');
+
 Route::get('/orders-process/{id}', [OrderController::class, 'processOrders'])->name('orders.pay.create');
 Route::post('/orders-pay/{id}', [OrderController::class, 'ordersPay'])->name('orders.pay.store');
 
 //test
-Route::get('/get-meal_names-by-category/{categoryId}', [OrderController::class, 'index']);
-Route::get('/order-items/create/{order_id}', [OrderItemController::class, 'customCreate']);
+// Route::get('/get-meal_names-by-category/{categoryId}', [OrderController::class, 'index']);
 Route::resource('order-items', OrderItemController::class);
 Route::resource('customer-feedback', CustomerFeedbackController::class);
 Route::get('/order-items', [OrderItemController::class, 'index'])->name('order-items.index');
 Route::resource('payments', PaymentController::class);
 Route::get('payments/get-order-items/{id}', [PaymentController::class, 'orderitem']);
 Route::resource('stock-items', StockItemController::class);
-
+Route::get('/stock-items/{id}/variation', [StockItemController::class, 'showVariation']);
 Route::get('/get-variations/{productId}', [StockItemController::class, 'getVariations']);
 
 Route::resource('damaged_items', DamagedItemController::class);
