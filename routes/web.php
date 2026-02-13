@@ -6,6 +6,8 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\DamagedItem;
 use App\Models\BookingTable;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\OrderController;
@@ -53,6 +55,9 @@ Route::resource('purchases', PurchaseController::class);
 //test
 Route::post('/purchases/update-price/{id}', [PurchaseController::class, 'updatePrice'])->name('purchases.updatePrice');
 Route::get('/asset-price-history/{asset}', [AssetPriceHistoryController::class, 'index'])->name('asset-price-history.index');
+// sahii ha nechy wala
+Route::get('/get-product-variations/{product}', [OrderController::class, 'getProductVariations']);
+
 
 
 
@@ -62,6 +67,8 @@ Route::get('/get-items/{type}', [PurchaseController::class, 'getItems']);
 Route::get('/get-product-variations/{productId}', [ProductController::class, 'getVariations']);
 
 Route::resource('orders', OrderController::class);
+Route::get('check-stock/{product_id}/{variation_id?}',[OrderController::class, 'checkStock']);
+// Route::get('/check-stock/{productId}', [OrderController::class, 'checkStock']);
 Route::get('/order-status', [OrderStatusController::class, 'index'])->name('order_status.index');
 Route::post('/orders/{order}/status', [OrderController::class, 'storeStatus'])->name('orders.status.store');
 Route::post('/orders/{order}/status-update', [OrderStatusController::class, 'updateStatus'])->name('orders.status.update');
@@ -69,20 +76,19 @@ Route::get('order-status/index/{id}', [OrderStatusController::class, 'index']);
 
 
 Route::get('/get-products-by-category/{categoryId}', [OrderController::class, 'getProductsByCategory']);
-Route::get('/get-dish-variations/{dishId}', [OrderController::class, 'getDishVariations']);
-Route::get('/get-product-variations/{productId}', [OrderController::class, 'getProductVariations']);
+// Route::get('/get-dish-variations/{dishId}', [OrderController::class, 'getDishVariations']);
+// Route::get('/get-product-variations/{productId}', [OrderController::class, 'getDishVariations']);
 
 
 Route::get('/orders-process/{id}', [OrderController::class, 'processOrders'])->name('orders.pay.create');
 Route::post('/orders-pay/{id}', [OrderController::class, 'ordersPay'])->name('orders.pay.store');
+Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
 
 //test
 // Route::get('/get-meal_names-by-category/{categoryId}', [OrderController::class, 'index']);
 Route::resource('order-items', OrderItemController::class);
 Route::resource('customer-feedback', CustomerFeedbackController::class);
-Route::get('/order-items', [OrderItemController::class, 'index'])->name('order-items.index');
-Route::resource('payments', PaymentController::class);
-Route::get('payments/get-order-items/{id}', [PaymentController::class, 'orderitem']);
+
 Route::resource('stock-items', StockItemController::class);
 Route::get('/stock-items/{id}/variation', [StockItemController::class, 'showVariation']);
 Route::get('/get-variations/{productId}', [StockItemController::class, 'getVariations']);
@@ -93,6 +99,9 @@ Route::get('/product-sales-report', [ReportController::class, 'productSalesRepor
 Route::resource('mess_menus', MessMenuController::class);
 Route::resource('menu-materials',MenuMaterialController::class);
 Route::resource('mess_items_purchases', MessItemsPurchaseController::class);
+Route::get('/purchase-invoices', [MessItemsPurchaseController::class,'invoices'])->name('purchases.invoices');
+Route::get('/purchase-invoice/{invoice_no}', [MessItemsPurchaseController::class,'showInvoice'])->name('purchases.showInvoice');
+
 Route::resource('mess-distributions', MessDistributionController::class);
 Route::resource('mess-finances',MessFinanceController::class);
 Route::resource('dish_variations', DishVariationController::class);
@@ -102,12 +111,7 @@ Route::resource('dish_variations', DishVariationController::class);
 
 
 Route::get('/', function () {
-    return view('dashboard', [
-        'users' => User::count(),
-        'tables' => BookingTable::count(),
-        'products' => Product::count(),
-        'ordersToday' => Order::whereDate('created_at', today())->count(),
-    ]);
+    return view('dashboard', ['users' => User::count(),'tables' => BookingTable::count(),'products' => Product::count(),'ordersToday' => Order::whereDate('created_at', today())->count(),]);
 })->middleware(['auth'])->name('dashboard');
 
 
@@ -124,4 +128,19 @@ require __DIR__.'/auth.php';
 
 
 
+//email send testing route
+// Route::get('/test-mail', function() {
+//     try {
+//         Log::info('Test mail triggered');
+//         Mail::raw('Test mail', function($message) {
+//             $message->to('muhammadawais05152@gmail.com')
+//                     ->subject('Test Email');
+//         });
+//         Log::info('Test mail sent successfully');
+//         return 'Mail sent successfully';
+//     } catch (\Exception $e) {
+//         Log::error('Mail sending failed: '.$e->getMessage());
+//         return 'Mail sending failed: ' . $e->getMessage();
+//     }
+// });
 

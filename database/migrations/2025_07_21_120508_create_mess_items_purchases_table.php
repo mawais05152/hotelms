@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('mess_items_purchases', function (Blueprint $table) {
             $table->id();
+            $table->string('invoice_no')->unique();
             $table->string('ingredient_name');
             $table->decimal('quantity', 8, 2);
             $table->string('unit');

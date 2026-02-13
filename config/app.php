@@ -71,7 +71,7 @@ return [
     */
 
     // 'timezone' => 'UTC',
-    'timezone' => 'Asia/Karachi',
+    'timezone' => env('APP_TIMEZONE', 'UTC'),
 
 
     /*

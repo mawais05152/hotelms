@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('invoice_no')->unique();
             $table->string('name')->unique();
             $table->string('asset_type');
+            $table->unsignedBigInteger('variation_id')->nullable();
             $table->integer('total_quantity');
             $table->decimal('price', 10, 2)->default(0);
             $table->string('supplier_name');
@@ -25,6 +26,8 @@ return new class extends Migration
             $table->date('purchase_date');
             $table->text('notes')->nullable();
             $table->timestamps();
+            
+            $table->foreign('variation_id')->references('id')->on('variations')->onDelete('cascade');
         });
     }
 

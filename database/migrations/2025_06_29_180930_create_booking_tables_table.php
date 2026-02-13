@@ -13,8 +13,7 @@ return new class extends Migration
     {
         Schema::create('booking', function (Blueprint $table) {
         $table->id();
-        $table->string('table_number');
-        $table->enum('status', ['Available', 'Occupied'])->default('Available');
+        $table->string('table_number')->unique();
         $table->timestamps();
     });
     }

@@ -124,7 +124,7 @@
                 </a>
                  <a href="/variations"
                     class="list-group-item list-group-item-action {{ Request::is('variations*') ? 'active' : '' }}">
-                    <i class="fas fa-file-invoice-dollar me-2"></i> Variations
+                    <i class="fas fa-layer-group me-2"></i> Variations
                 </a>
                 <a href="/orders"
                     class="list-group-item list-group-item-action {{ Request::is('orders*') ? 'active' : '' }}">
@@ -152,11 +152,11 @@
                 </a> --}}
                 <a href="/stock-items"
                     class="list-group-item list-group-item-action {{ Request::is('stock-items*') ? 'active' : '' }}">
-                    <i class="fas fa-file-invoice-dollar me-2"></i> stockInventory
+                    <i class="fas fa-warehouse me-2"></i> stockInventory
                 </a>
                  <a href="/restaurant-assets"
                     class="list-group-item list-group-item-action {{ Request::is('restaurant-assets*') ? 'active' : '' }}">
-                    <i class="fas fa-file-invoice-dollar me-2"></i> Restauant Assets
+                    <i class="fas fa-building me-2"></i> Restauant Assets
                 </a>
                  {{-- <a href="/damaged_items"
                     class="list-group-item list-group-item-action {{ Request::is('damaged_items*') ? 'active' : '' }}">
@@ -164,20 +164,20 @@
                 </a> --}}
                  <a href="/purchases"
                     class="list-group-item list-group-item-action {{ Request::is('purchases*') ? 'active' : '' }}">
-                    <i class="fas fa-file-invoice-dollar me-2"></i> Purchases
+                    <i class="fas fa-shopping-cart me-2"></i> Purchases
                 </a>
 
                  <a href="/mess_menus"
                     class="list-group-item list-group-item-action {{ Request::is('mess_menus*') ? 'active' : '' }}">
-                    <i class="fas fa-file-invoice-dollar me-2"></i> Shif Menus
+                    <i class="fas fa-utensils me-2"></i> Shif Menus
                 </a>
                  <a href="/menu-materials"
                     class="list-group-item list-group-item-action {{ Request::is('menu-materials*') ? 'active' : '' }}">
-                    <i class="fas fa-file-invoice-dollar me-2"></i> Menu Materials
+                    <i class="fas fa-pepper-hot me-2"></i> Menu Materials
                 </a>
                  <a href="/mess_items_purchases"
                     class="list-group-item list-group-item-action {{ Request::is('mess_items_purchases*') ? 'active' : '' }}">
-                    <i class="fas fa-file-invoice-dollar me-2"></i> Mess Items Purchases
+                    <i class="fas fa-boxes me-2"></i> Mess Items Purchases
                 </a>
                  {{-- <a href="/mess-distributions"
                     class="list-group-item list-group-item-action {{ Request::is('mess-distributions*') ? 'active' : '' }}">
@@ -187,10 +187,10 @@
                     class="list-group-item list-group-item-action {{ Request::is('mess-finances*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar me-2"></i> Mess Finances
                 </a> --}}
-                 <a href="/dish_variations"
+                 {{-- <a href="/dish_variations"
                     class="list-group-item list-group-item-action {{ Request::is('dish_variations*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar me-2"></i> Dishes Variations
-                </a>
+                </a> --}}
                  {{-- <a href="/staff-salaries"
                     class="list-group-item list-group-item-action {{ Request::is('staff-salaries*') ? 'active' : '' }}">
                     <i class="fas fa-file-invoice-dollar me-2"></i> Staff Salaries

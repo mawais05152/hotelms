@@ -49,10 +49,12 @@ class VariationController extends Controller
     public function update(Request $request, Variation $variation)
     {
         $request->validate([
-            'unit' => 'required',
-            'size' => 'required',
-            'price' => 'required',
+            'product_id' => 'required|exists:products,id',
+            'size'  => 'required',
+            'price' => 'required|numeric',
+            'unit'  => 'nullable',
         ]);
+        
         $variation->product_id = $request->product_id;
         $variation->unit = $request->unit;
         $variation->size = $request->size;

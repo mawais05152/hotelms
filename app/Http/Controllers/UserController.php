@@ -11,13 +11,10 @@ use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+
     public function index(Request $request)
     {
         $users = User::all();
-
         return view('users.index', compact('users'));
     }
 
@@ -32,48 +29,32 @@ class UserController extends Controller
             'password' => ['required', Password::min(8)->letters()->numbers()->symbols()],
             'role' => ['required', 'string', 'in:Admin,Waiter'],
         ]);
-            if ($request->role === 'Admin') {
-                if (!Auth::check() || Auth::user()->role !== 'Admin') {
-                    return redirect()->back()->withErrors(['role' => 'You do not have permission to register an Admin user.']);
-                }
+        if ($request->role === 'Admin') {
+            if (!Auth::check() || Auth::user()->role !== 'Admin') {
+                return redirect()->back()->withErrors(['role' => 'You do not have permission to register an Admin user.']);
             }
-
-       User::create([
-    // dd($request->all()),
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'role' => $request->role
-            ]);
-
-            return redirect('/users')->with('success', 'User added successfully');
         }
+        
+        User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $request->role
+        ]);
+        return redirect('/users')->with('success', 'User added successfully');
+    }
 
-
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
    public function edit($id)
-{
-    $users = User::all();
-    $editUser = User::findOrFail($id);
+    {
+        $users = User::findOrFail($id);
+        return view('users.index', compact('users'));
+    }
 
-    return view('users.index', compact('users', 'editUser'));
-}
-
-
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $request->validate([
@@ -88,21 +69,15 @@ class UserController extends Controller
                 }
             }
         $user = User::findOrFail($id);
-         dd($user);
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
-
         ]);
-
         return redirect()->back()->with('success','User updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $user = User::findOrFail($id);

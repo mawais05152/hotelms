@@ -5,9 +5,9 @@
         <div class="row justify-content-center">
             <div class="col-md-12">
                 <div class="card shadow">
-                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                        <span>Variation List</span>
-                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#createModal">+ Add New</button>
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h4>Variation List</h4>
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createModal">+ Add Variation</button>
                     </div>
 
                     <div class="card-body">
@@ -17,7 +17,7 @@
 
                         <table class="table table-bordered table-striped">
                             <thead class="table-primary">
-                                <tr>
+                                <tr class="table-dark">
                                     <th>ID</th>
                                     <th>Item Name</th>
                                     <th>Color</th>
@@ -89,7 +89,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-success">Save</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
                     </div>
                 </form>
             </div>
@@ -98,14 +98,13 @@
 
     <!-- EDIT MODALS -->
     @foreach ($variations as $variation)
-        <div class="modal fade" id="editModal{{ $variation->id }}" tabindex="-1"
-            aria-labelledby="editModalLabel{{ $variation->id }}" aria-hidden="true">
+        <div class="modal fade" id="editModal{{ $variation->id }}" tabindex="-1" aria-labelledby="editModalLabel{{ $variation->id }}" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <form action="{{ route('variations.update', $variation->id) }}" method="POST">
                         @csrf
                         @method('PUT')
-                        <div class="modal-header bg-warning">
+                        <div class="modal-header bg-primary text-white">
                             <h5 class="modal-title" id="editModalLabel{{ $variation->id }}">Edit Variation</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
@@ -124,19 +123,16 @@
 
                             <div class="form-group mb-3">
                                 <label>Unit</label>
-                                <input type="text" name="unit" class="form-control" value="{{ $variation->unit }}"
-                                    required>
+                                <input type="text" name="unit" class="form-control" value="{{ $variation->unit }}">
                             </div>
 
                             <div class="form-group mb-3">
                                 <label>Size</label>
-                                <input type="text" name="size" class="form-control" value="{{ $variation->size }}"
-                                    required>
+                                <input type="text" name="size" class="form-control" value="{{ $variation->size }}" required>
                             </div>
                             <div class="form-group mb-3">
                                 <label>Price</label>
-                                <input type="number" name="price" class="form-control" value="{{ $variation->price }}"
-                                    required>
+                                <input type="number" name="price" class="form-control" value="{{ $variation->price }}" required>
                             </div>
                         </div>
                         <div class="modal-footer">

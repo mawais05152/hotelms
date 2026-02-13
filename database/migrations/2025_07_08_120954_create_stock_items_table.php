@@ -13,13 +13,18 @@ return new class extends Migration
     {
         Schema::create('stock_items', function (Blueprint $table) {
             $table->id();
-            $table->enum('item_type', ['product', 'asset']);
-            $table->unsignedBigInteger('product_id')->nullable(); 
+            // $table->enum('item_type', ['product', 'asset', 'mess'])->change()->nullable();
+            $table->unsignedBigInteger('product_id')->nullable();
+            $table->unsignedBigInteger('variation_id')->nullable();
             $table->unsignedBigInteger('asset_id')->nullable();
-            $table->integer('total_quantity');
-            $table->integer('damaged_quantity');
-            $table->integer('available_qty');
+            $table->enum('item_type', ['product', 'asset']);
+            $table->string('name')->nullable();
+            $table->string('unit')->nullable();
+            $table->integer('total_quantity')->nullable();
+            $table->integer('damaged_quantity')->nullable();
+            $table->integer('available_qty')->nullable();
             $table->decimal('price', 10, 2)->default(0);
+            $table->decimal('total_cost', 10, 2)->nullable();
             $table->timestamps();
         });
     }

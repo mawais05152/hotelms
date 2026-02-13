@@ -25,9 +25,7 @@
                         <td>{{ $user->email }}</td>
                         <td>{{ $user->role }}</td>
                         <td>
-                            <button class="btn btn-sm btn-primary editUserBtn"
-                                data-user='@json($user)'>Edit</button>
-
+                            <button class="btn btn-sm btn-primary editUserBtn" data-user='@json($user)'>Edit</button>
                             <form action="{{ url('/users/'.$user->id) }}" method="POST" style="display:inline-block;">
                                 @csrf
                                 @method('DELETE')
@@ -41,7 +39,6 @@
     </div>
 </div>
 
-<!-- Modal -->
 <div class="modal fade" id="userModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -84,19 +81,30 @@
     </div>
 </div>
 
-<!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+@push('scripts')
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+@endpush
 <script>
 $(document).ready(function() {
-
-    // Modal Instance
+    $('#usersTable').DataTable({
+        "paging": true,
+        "searching": true,
+        "ordering": true,
+        "info": true,
+        "responsive": true
+    });
+});
+</script>
+<script>
+$(document).ready(function() {
     var userModal = new bootstrap.Modal(document.getElementById('userModal'));
-
-    // Open Modal on Button Click
     $('#addUserBtn').click(function() {
-        $('#userForm')[0].reset(); // Form reset
-        $('#user_id').val('');     // ID empty for new user
+        $('#userForm')[0].reset();
+        $('#user_id').val('');
         userModal.show();
     });
 
@@ -108,10 +116,6 @@ $(document).ready(function() {
     $('[name="role"]').val(user.role);
     userModal.show();
 });
-
 });
 </script>
-
-
-
 @endsection

@@ -9,5 +9,5 @@ class BookingTable extends Model
 {
     use HasFactory;
     protected $table = 'booking';
-    protected $fillable = ['table_number', 'status'];
+    protected $fillable = ['table_number'];
 }

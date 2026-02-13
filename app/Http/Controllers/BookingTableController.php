@@ -7,9 +7,6 @@ use Illuminate\Http\Request;
 
 class BookingTableController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
      public function create() {
         return view('booking_tables.index');
     }
@@ -20,9 +17,14 @@ class BookingTableController extends Controller
     }
 
     public function store(Request $request) {
-        $request->validate(['table_number' => 'required', 'status' => 'required']);
-        BookingTable::create($request->all());
-        return redirect()->route('bookingtables.index')->with('success', 'Table booked successfully!');
+        $request->validate([
+        'table_number' => 'required',
+    ]);
+
+    $table = new BookingTable();
+    $table->table_number = $request->table_number;
+    $table->save();
+    return redirect()->route('bookingtables.index')->with('success', 'Table booked successfully!');
     }
 
     public function update(Request $request, $id) {
