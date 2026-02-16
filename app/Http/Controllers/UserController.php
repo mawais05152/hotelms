@@ -15,11 +15,12 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $users = User::all();
-        return view('users.index', compact('users'));
+        $roles = \Spatie\Permission\Models\Role::all();
+        return view('users.index', compact('users', 'roles'));
     }
 
     public function create() {
-     return view('users.index');
+      return view('users.index');
     }
 
     public function store(Request $request) {
@@ -27,20 +28,18 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', Password::min(8)->letters()->numbers()->symbols()],
-            'role' => ['required', 'string', 'in:Admin,Waiter'],
+            'role' => ['required', 'string'],
         ]);
-        if ($request->role === 'Admin') {
-            if (!Auth::check() || Auth::user()->role !== 'Admin') {
-                return redirect()->back()->withErrors(['role' => 'You do not have permission to register an Admin user.']);
-            }
-        }
         
-        User::create([
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role
+            'role' => $request->role // Keeping old column for compatibility
         ]);
+
+        $user->assignRole($request->role);
+
         return redirect('/users')->with('success', 'User added successfully');
     }
 
@@ -52,29 +51,33 @@ class UserController extends Controller
    public function edit($id)
     {
         $users = User::findOrFail($id);
-        return view('users.index', compact('users'));
+        $roles = \Spatie\Permission\Models\Role::all();
+        return view('users.index', compact('users', 'roles'));
     }
 
     public function update(Request $request, string $id)
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required'],
-            'role' => ['required', 'string', 'in:Admin,Waiter'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class.',email,'.$id],
+            'password' => ['nullable'],
+            'role' => ['required', 'string'],
         ]);
-            if ($request->role === 'Admin') {
-                if (!Auth::check() || Auth::user()->role !== 'Admin') {
-                    return redirect()->back()->withErrors(['role' => 'You do not have permission to register an Admin user.']);
-                }
-            }
+
         $user = User::findOrFail($id);
-        $user->update([
+        $updateData = [
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
             'role' => $request->role,
-        ]);
+        ];
+
+        if ($request->filled('password')) {
+            $updateData['password'] = Hash::make($request->password);
+        }
+
+        $user->update($updateData);
+        $user->syncRoles([$request->role]);
+
         return redirect()->back()->with('success','User updated successfully.');
     }
 
