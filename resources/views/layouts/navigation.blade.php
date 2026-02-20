@@ -18,6 +18,35 @@
                 </div>
             </div>
 
+            {{-- <div class="hidden sm:flex sm:items-center sm:ms-6">
+                <!-- Notifications Dropdown -->
+                <div class="relative ms-3" x-data="{ open: false }">
+                    <button @click="open = !open" class="relative p-1 text-gray-400 hover:text-gray-500 focus:outline-none transition duration-150 ease-in-out">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        @php $unreadCount = Auth::user()->unreadNotifications->count(); @endphp
+                        @if($unreadCount > 0)
+                            <span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">{{ $unreadCount }}</span>
+                        @endif
+                    </button>
+
+                    <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg overflow-hidden z-50" style="display: none;">
+                        <div class="py-2 px-4 bg-gray-100 dark:bg-gray-700 font-bold text-sm">Notifications</div>
+                        <div class="max-h-64 overflow-y-auto">
+                            @forelse(Auth::user()->unreadNotifications as $notification)
+                                <a href="{{ route('orders.show', $notification->data['order_id']) }}" class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-600">
+                                    <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ $notification->data['message'] }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">User: {{ $notification->data['user_name'] }} | Price: ${{ $notification->data['price'] }}</p>
+                                    <p class="text-xs text-gray-400 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
+                                </a>
+                            @empty
+                                <div class="px-4 py-4 text-center text-gray-500 dark:text-gray-400 text-sm">No new notifications</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 <x-dropdown align="right" width="48">
@@ -38,6 +67,7 @@
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
+
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -50,7 +80,93 @@
                         </form>
                     </x-slot>
                 </x-dropdown>
+            </div> --}}
+            <div class="hidden sm:flex sm:items-center sm:ms-6 space-x-4">
+
+    {{-- 🔔 Notification Bell --}}
+    <div class="relative" x-data="{ open: false }">
+        <button @click="open = !open"
+            class="relative p-1 text-gray-500 hover:text-gray-700 focus:outline-none">
+
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002
+                    6.002 0 00-4-5.659V5a2 2 0 10-4
+                    0v.341C7.67 6.165 6 8.388 6 11v3.159c0
+                    .538-.214 1.055-.595 1.436L4 17h5m6
+                    0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+
+            @php $unreadCount = Auth::user()->unreadNotifications->count(); @endphp
+            @if($unreadCount > 0)
+                <span class="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1 rounded-full">
+                    {{ $unreadCount }}
+                </span>
+            @endif
+        </button>
+
+        {{-- Dropdown --}}
+        <div x-show="open" @click.away="open = false"
+            class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border rounded shadow-lg z-50"
+            style="display:none;">
+
+            <div class="px-4 py-2 font-bold border-b">
+                Notifications
             </div>
+
+            <div class="max-h-60 overflow-y-auto">
+                @forelse(Auth::user()->unreadNotifications as $notification)
+                    <a href="{{ route('orders.show', $notification->data['order_id']) }}"
+                       class="block px-4 py-3 hover:bg-gray-100 border-b">
+                        <p class="text-sm font-semibold">
+                            {{ $notification->data['message'] }}
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            {{ $notification->created_at->diffForHumans() }}
+                        </p>
+                    </a>
+                @empty
+                    <div class="px-4 py-3 text-center text-sm text-gray-500">
+                        No new notifications
+                    </div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+
+    {{-- 👤 Profile Dropdown --}}
+    <x-dropdown align="right" width="48">
+        <x-slot name="trigger">
+            <button
+                class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700">
+                {{ Auth::user()->name }}
+                <svg class="ms-1 h-4 w-4 fill-current" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10
+                        10.586l3.293-3.293a1 1 0 111.414
+                        1.414l-4 4a1 1 0 01-1.414
+                        0l-4-4a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                </svg>
+            </button>
+        </x-slot>
+
+        <x-slot name="content">
+            <x-dropdown-link :href="route('profile.edit')">
+                Profile
+            </x-dropdown-link>
+
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <x-dropdown-link :href="route('logout')"
+                    onclick="event.preventDefault(); this.closest('form').submit();">
+                    Logout
+                </x-dropdown-link>
+            </form>
+        </x-slot>
+    </x-dropdown>
+
+</div>
 
             <!-- Hamburger -->
             <div class="-me-2 flex items-center sm:hidden">

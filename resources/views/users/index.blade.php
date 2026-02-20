@@ -23,7 +23,7 @@
                         <td>{{ $user->id }}</td>
                         <td>{{ $user->name }}</td>
                         <td>{{ $user->email }}</td>
-                        <td>{{ $user->role }}</td>
+                        <td>{{ $user->roles->pluck('name')->implode(', ') }}</td>
                         <td>
                             <button class="btn btn-sm btn-primary editUserBtn" data-user='@json($user)'>Edit</button>
                             <form action="{{ url('/users/'.$user->id) }}" method="POST" style="display:inline-block;">

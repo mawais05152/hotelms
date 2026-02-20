@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\{DB,Log,Auth};
 use Stripe\Exception\CardException;
 use Stripe\{Stripe,Card,PaymentIntent,Customer};
 use App\Models\{User,BookingTable,Category,Product,MessMenu,StockItem,Variation,Order,OrderStatus};
+use App\Notifications\OrderPaidNotification;
+use Illuminate\Support\Facades\Notification;
 
 class OrderController extends Controller
 {
@@ -276,6 +278,17 @@ class OrderController extends Controller
                 'description' => 'Order Payment',
             ]);
             $order->update(['payment_status' => 'paid']);
+
+            // Notify Admin
+            $admin = User::role('Admin')->first();
+            if ($admin) {
+                try {
+                    $admin->notify(new OrderPaidNotification($order));
+                } catch (\Exception $e) {
+                    Log::error('Notification failed: ' . $e->getMessage());
+                }
+            }
+
             return redirect()->route('orders.index')->with('success', 'Payment successful!');
         } catch (CardException $e) {
             return back()->withErrors(['error' => 'Payment failed: ' . $e->getMessage()]);

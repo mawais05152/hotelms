@@ -48,6 +48,8 @@ class RegisteredUserController extends Controller
             'role' => 'Waiter',
         ]);
 
+        $user->assignRole('Waiter');
+
         event(new Registered($user));
          if (Auth::check()) {
         return redirect('/users')->with('success', 'User added successfully.');

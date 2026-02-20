@@ -1,0 +1,64 @@
+
+  Dropping all tables  346ms DONE
+
+   INFO  Preparing database.  
+
+  Creating migration table  16ms DONE
+
+   INFO  Running migrations.  
+
+  2014_10_12_000000_create_users_table  77ms DONE
+  2014_10_12_100000_create_password_reset_tokens_table  14ms DONE
+  2019_05_03_000001_create_customer_columns  123ms DONE
+  2019_05_03_000002_create_subscriptions_table  95ms DONE
+  2019_05_03_000003_create_subscription_items_table  94ms DONE
+  2019_08_19_000000_create_failed_jobs_table  54ms DONE
+  2019_12_14_000001_create_personal_access_tokens_table  106ms DONE
+  2025_06_29_180930_create_booking_tables_table  49ms DONE
+  2025_06_29_182237_create_categories_table  14ms DONE
+  2025_06_29_190115_create_products_table  48ms DONE
+  2025_06_29_191119_create_orders_table  376ms DONE
+  2025_06_29_192250_create_order_items_table  130ms DONE
+  2025_06_29_201456_create_payments_table  53ms DONE
+  2025_07_04_114342_create_daily_order_reports_table  13ms DONE
+  2025_07_04_123110_create_staff_salaries_table  59ms DONE
+  2025_07_04_123952_create_expenses_table  13ms DONE
+  2025_07_04_125616_create_customer_feedback_table  78ms DONE
+  2025_07_08_110509_change_rating_column_in_customer_feedbacks_table  39ms DONE
+  2025_07_08_120954_create_stock_items_table  17ms DONE
+  2025_07_08_125623_create_damaged_items_table  74ms DONE
+  2025_07_08_133406_create_restaurant_assets_table  55ms DONE
+  2025_07_08_192726_create_variations_table  75ms DONE
+  2025_07_12_162315_create_order_statuses_table  116ms DONE
+  2025_07_16_021309_create_asset_price_histories_table  66ms DONE
+  2025_07_16_230147_create_purchases_table  171ms DONE
+  2025_07_17_130739_remove_unique_from_name_on_purchases_table  50ms DONE
+  2025_07_21_120108_create_mess_menus_table  22ms DONE
+  2025_07_21_120109_create_menu_materials_table  14ms DONE
+  2025_07_21_120508_create_mess_items_purchases_table  59ms DONE
+  2025_07_21_120551_create_mess_distributions_table  72ms DONE
+  2025_07_21_120647_create_mess_finances_table  65ms DONE
+  2026_02_11_153436_add_payment_status_to_orders_table  50ms DONE
+  2026_02_15_162831_create_permission_tables  28ms FAIL
+
+   Illuminate\Database\QueryException 
+
+  SQLSTATE[42000]: Syntax error or access violation: 1071 Specified key was too long; max key length is 1000 bytes (Connection: mysql, SQL: alter table `permissions` add unique `permissions_name_guard_name_unique`(`name`, `guard_name`))
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+    825???                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    826???                 );
+    827???             }
+    828??? 
+  ??? 829???             throw new QueryException(
+    830???                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    831???             );
+    832???         }
+    833???     }
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:587
+      PDOException::("SQLSTATE[42000]: Syntax error or access violation: 1071 Specified key was too long; max key length is 1000 bytes")
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:587
+      PDOStatement::execute()
+
