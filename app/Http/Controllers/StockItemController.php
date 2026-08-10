@@ -13,12 +13,12 @@ class StockItemController extends Controller
 {
     public function index(Request $request)
     {
-        $stockItems = StockItem::with(['product'])->latest()->get();
+        $stockItems = StockItem::with(['product', 'variation'])->latest()->get();
         $categories = Category::all();
         $products = Product::all();
         $variations = Variation::all();
 
-        return view('stock_items.index', compact('stockItems', 'categories', 'variations'));
+        return view('stock_items.index', compact('stockItems', 'categories', 'variations','products'));
     }
 
     public function store(Request $request)
@@ -108,4 +108,16 @@ class StockItemController extends Controller
     {
         return Variation::where('product_id', $productId)->get();
     }
+
+    public function showVariation($id)
+{
+    $stockItem = StockItem::with('variation')->find($id);
+
+    if (!$stockItem) {
+        abort(404, 'Stock item not found');
+    }
+
+    return view('stock_items.partials.variation', compact('stockItem'));
+}
+
 }

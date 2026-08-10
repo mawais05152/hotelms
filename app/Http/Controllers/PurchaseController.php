@@ -14,100 +14,229 @@ use Illuminate\Support\Facades\Log;
 
 class PurchaseController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+
     public function index()
     {
-        $assets = Purchase::latest()->get();
+        $assets = Purchase::with('variation')->get();
         return view('purchases.index', compact('assets'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         //
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // public function store(Request $request)
+    // {
+    //     $request->validate([
+    //         'item_type' => 'required|in:product,asset',
+    //         'item_id' => 'required|string',
+    //         'variation_id' => 'nullable|required_if:item_type,product|integer',
+    //         'total_quantity' => 'required|integer|min:1',
+    //         'price' => 'nullable|numeric|min:0',
+    //         'supplier_name' => 'required|string|max:255',
+    //         'purchase_date' => 'required|date',
+    //         'notes' => 'nullable|string',
+    //     ]);
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'item_type' => 'required|in:product,asset',
-            'item_id' => 'required|string',
-            'variation_id' => 'nullable|required_if:item_type,product|integer',
-            'total_quantity' => 'required|integer|min:1',
-            'price' => 'nullable|numeric|min:0',
-            'supplier_name' => 'required|string|max:255',
-            'purchase_date' => 'required|date',
-            'notes' => 'nullable|string',
-        ]);
+    //     $itemType = $request->item_type;
+    //     $itemId = $request->item_id;
+    //     $variationId = $itemType === 'product' ? $request->variation_id : null;
 
-        $itemType = $request->item_type;
-    $itemId = $request->item_id;
-    $variationId = $itemType === 'product' ? $request->variation_id : null;
+    //     $name = null;
+    //     if ($itemType === 'product') {
+    //         $product = Product::find($itemId);
+    //         $name = $product ? $product->name : null;
+    //     }
+    //     else {
+    //         $asset = RestaurantAsset::find($itemId);
+    //         $name = $asset ? $asset->name : null;
+    //     }
 
-    $name = null;
-    if ($itemType === 'product') {
-        $product = Product::find($itemId);
-        $name = $product ? $product->name : null;
-    } else {
-        $asset = RestaurantAsset::find($itemId);
-        $name = $asset ? $asset->name : null;
-    }
+    //     $existingPurchase = Purchase::where('asset_type', $itemType)
+    //         ->where('name', $name)
+    //         ->when($itemType === 'product', function ($query) use ($variationId) {
+    //             return $query->where('variation_id', $variationId);
+    //         })->first();
 
-    $existingPurchase = Purchase::where('asset_type', $itemType)
-        ->where('name', $name)
-        ->when($itemType === 'product', function ($query) use ($variationId) {
-            return $query->where('variation_id', $variationId);
-        })
-        ->first();
+    //     if ($existingPurchase) {
+    //         return redirect()->back()->withInput()->withErrors([
+    //             'item_id' => 'This item has already been purchased. Please update the existing entry instead.',
+    //         ]);
+    //     }
 
-    if ($existingPurchase) {
-        return redirect()->back()->withInput()->withErrors([
-            'item_id' => 'This item has already been purchased. Please update the existing entry instead.',
-        ]);
-    }
+    //     $purchase = Purchase::create([
+    //         'invoice_no' => 'INV-' . now()->timestamp,
+    //         'name' => $name,
+    //         'asset_type' => $itemType,
+    //         'variation_id' => $variationId,
+    //         'total_quantity' => $request->total_quantity,
+    //         'price' => $request->price ?? 0,
+    //         'supplier_name' => $request->supplier_name,
+    //         'purchase_date' => $request->purchase_date,
+    //         'notes' => $request->notes,
+    //     ]);
 
-    $purchase = Purchase::create([
-        'invoice_no' => 'INV-' . now()->timestamp,
-        'name' => $name,
-        'asset_type' => $itemType,
-        'variation_id' => $variationId,
-        'total_quantity' => $request->total_quantity,
-        'price' => $request->price ?? 0,
-        'supplier_name' => $request->supplier_name,
-        'purchase_date' => $request->purchase_date,
-        'notes' => $request->notes,
-    ]);
+    //     $stock = StockItem::where('item_type', $itemType)
+    //         ->where($itemType === 'product' ? 'product_id' : 'asset_id', $itemId)
+    //         ->first();
 
-    $stock = StockItem::where('item_type', $itemType)
-        ->where($itemType === 'product' ? 'product_id' : 'asset_id', $itemId)
-        ->first();
+    //     // if ($stock) {
+    //     //     $stock->total_quantity += $request->total_quantity;
+    //     //     $stock->available_qty += $request->total_quantity;
+    //     //     $stock->save();
+    //     // } else {
+    //         StockItem::create([
+    //             'item_type' => $itemType,
+    //             'product_id' => $itemType === 'product' ? $itemId : null,
+    //             'asset_id' => $itemType === 'asset' ? $itemId : null,
+    //             'total_quantity' => $request->total_quantity,
+    //             'price' => $request->price ?? 0,
+    //             'damaged_quantity' => 0,
+    //             'available_qty' => $request->total_quantity,
+    //         ]);
+    //     // }
 
-    // if ($stock) {
-    //     $stock->total_quantity += $request->total_quantity;
-    //     $stock->available_qty += $request->total_quantity;
-    //     $stock->save();
-    // } else {
-        StockItem::create([
-            'item_type' => $itemType,
-            'product_id' => $itemType === 'product' ? $itemId : null,
-            'asset_id' => $itemType === 'asset' ? $itemId : null,
-            'total_quantity' => $request->total_quantity,
-            'price' => $request->price ?? 0,
-            'damaged_quantity' => 0,
-            'available_qty' => $request->total_quantity,
-        ]);
+    //     return redirect()->route('purchases.index')->with('success', 'Purchase entry added successfully.');
     // }
 
-    return redirect()->route('purchases.index')->with('success', 'Purchase entry added successfully.');
+public function store(Request $request)
+{
+    if ($request->item_type == 'product') {
+        $item = Product::find($request->item_id);
+    } else {
+        $item = RestaurantAsset::find($request->item_id);
+    }
+
+    $name = $item ? $item->name : null;
+
+    if (!$name) {
+        return redirect()->back()->withErrors(['item_id' => 'Item not found']);
+    }
+
+    Purchase::create([
+        'item_type'      => $request->item_type,
+        'asset_type'     => $request->item_type,
+        'item_id'        => $request->item_id,
+        'variation_id'   => $request->variation_id,
+        'name'           => $name,
+        'total_quantity' => $request->total_quantity,
+        'price'          => $request->price,
+        'supplier_name'  => $request->supplier_name,
+        'invoice_no'     => $request->invoice_no,
+        'purchase_date'  => $request->purchase_date,
+        'notes'          => $request->notes,
+    ]);
+
+    // 3) Update stock
+    $stockQuery = StockItem::where('item_type', $request->item_type);
+
+    if ($request->item_type == 'product') {
+        $stockQuery->where('product_id', $request->item_id);
+    } else {
+        $stockQuery->where('asset_id', $request->item_id);
+    }
+
+    // variation_id check
+    if ($request->variation_id !== null && $request->variation_id !== '') {
+        $stockQuery->where('variation_id', $request->variation_id);
+    } else {
+        $stockQuery->whereNull('variation_id');
+    }
+
+    $stock = $stockQuery->first();
+
+    if ($stock) {
+        $stock->total_quantity += $request->total_quantity;
+        $stock->available_qty += $request->total_quantity;
+        $stock->damaged_quantity = $stock->damaged_quantity ?? 0;
+        $stock->price = $request->price;
+        $stock->save();
+    } else {
+        StockItem::create([
+            'item_type'      => $request->item_type,
+            'product_id'     => $request->item_type == 'product' ? $request->item_id : null,
+            'asset_id'       => $request->item_type == 'asset' ? $request->item_id : null,
+            'variation_id'   => $request->variation_id !== null && $request->variation_id !== '' ? $request->variation_id : null,
+            'name'           => $name,
+            'total_quantity' => $request->total_quantity,
+            'available_qty'  => $request->total_quantity,
+            'price'          => $request->price,
+            'damaged_quantity'=> 0,
+        ]);
+    }
+
+    return redirect()->back()->with('success', 'Purchase added & stock updated!');
 }
+
+// public function store(Request $request)
+// {
+//     if ($request->item_type == 'product') {
+//         $item = Product::find($request->item_id);
+//     } else {
+//         $item = RestaurantAsset::find($request->item_id);
+//     }
+
+//     $name = $item ? $item->name : null;
+
+//     if (!$name) {
+//         return redirect()->back()->withErrors(['item_id' => 'Item not found']);
+//     }
+
+//     Purchase::create([
+//         'item_type'      => $request->item_type,
+//         'asset_type'     => $request->item_type,   // required
+//         'item_id'        => $request->item_id,
+//         'variation_id'   => $request->variation_id,
+//         'name'           => $name,
+//         'total_quantity' => $request->total_quantity,
+//         'price'          => $request->price,
+//         'supplier_name'  => $request->supplier_name,
+//         'invoice_no'     => $request->invoice_no,
+//         'purchase_date'  => $request->purchase_date,
+//         'notes'          => $request->notes,
+//     ]);
+
+//     // 3) Update stock
+//     $stockQuery = StockItem::where('item_type', $request->item_type);
+
+//     if ($request->item_type == 'product') {
+//         $stockQuery->where('product_id', $request->item_id);
+//     } else {
+//         $stockQuery->where('asset_id', $request->item_id);
+//     }
+
+//     if ($request->variation_id !== null && $request->variation_id !== '') {
+    //     $stockQuery->where('variation_id', $request->variation_id);
+    // }else {
+//         $stockQuery->whereNull('variation_id');
+//     }
+
+//     $stock = $stockQuery->first();
+
+//     if ($stock) {
+//         $stock->total_quantity += $request->total_quantity;
+//         $stock->available_qty += $request->total_quantity;
+//         $stock->save();
+//     } else {
+//         StockItem::create([
+//             'item_type'     => $request->item_type,
+//             'product_id'    => $request->item_type == 'product' ? $request->item_id : null,
+//             'asset_id'      => $request->item_type == 'asset' ? $request->item_id : null,
+//             'variation_id'  => $request->variation_id,
+//             'name'          => $name,
+//             'total_quantity'=> $request->total_quantity,
+//             'available_qty' => $request->total_quantity,
+//             'price'         => $request->price,
+//         ]);
+//     }
+
+//     return redirect()->back()->with('success', 'Purchase added & stock updated!');
+// }
+
+
+
+
 
 
     /**
@@ -155,11 +284,6 @@ class PurchaseController extends Controller
         return redirect()->route('purchase.index')->with('success', 'Item updated successfully.');
     }
 
-    //    public function destroy(Purchase $purchase)
-    //     {
-    //         $purchase->delete();
-    //         return back()->with('success', 'Item deleted successfully.');
-    //     }
     public function destroy(Purchase $purchase)
     {
         $itemType = $purchase->asset_type;
@@ -182,8 +306,16 @@ class PurchaseController extends Controller
     public function getItems($type)
     {
         if ($type === 'product') {
-            $items = Product::with('variation')->select('id', 'name', 'price')->get();
-        } elseif ($type === 'asset') {
+            $items = Product::with('variation')
+                ->where('product_type', 'purchased')
+                ->select('id', 'name', 'price')
+                ->get();
+
+        }
+        // if ($type === 'product') {
+        //     $items = Product::with('variation')->select('id', 'name', 'price')->get();
+        // }
+         elseif ($type === 'asset') {
             $items = RestaurantAsset::select('id', 'name')->get();
         } else {
             return response()->json([], 404);

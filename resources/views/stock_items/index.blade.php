@@ -3,18 +3,14 @@
 @section('content')
     <div class="container mt-4">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header bg-primary text-white">
                 <h4>Stock Items
-                    <button class="btn btn-primary btn-sm float-end" data-bs-toggle="modal" data-bs-target="#stockModal">
-                        + Add Stock Item
-                    </button>
+                    <button class="btn btn-success float-end" data-bs-toggle="modal" data-bs-target="#stockModal">+ Add Stock Item</button>
                 </h4>
-                <div class="row">
-                    <div class="col-md-9"></div>
-                    <div class="col-md-3 text-end pt-2">
-                        <input type="text" id="searchInput" class="form-control"
-                            placeholder="Search by name, type, category..." onkeyup="searchTable()">
-                    </div>
+            </div>
+            <div class="row pt-3 px-3">
+                <div class="col-md-3 offset-md-9">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search by name, type, category..." onkeyup="searchTable()">
                 </div>
             </div>
 
@@ -67,17 +63,16 @@
                                 <td>
                                     <a href="{{ route('stock-items.index', ['edit' => $item->id]) }}"
                                         class="btn btn-warning btn-sm">Edit</a>
-                                    <form action="{{ route('stock-items.destroy', $item->id) }}" method="POST"
-                                        class="d-inline"
+                                    <form action="{{ route('stock-items.destroy', $item->id) }}" method="POST" class="d-inline"
                                         onsubmit="return confirm('Are you sure you want to delete this item?')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                                     </form>
-                                    <a href="javascript:void(0);" onclick="showVariations({{ $item->product_id }})"
-                                    class="btn btn-info btn-sm">Show Variations</a>
-                                    {{-- <button type="button" class="btn btn-secondary btn-sm printBtn"
-                                        data-id="{{ $item->id }}">Print</button> --}}
+                                    @if($item->item_type === 'product' && $item->variation_id)
+                                        <a href="javascript:void(0);" onclick="showVariations({{ $item->id }})" class="btn btn-info btn-sm">Show Variations</a>
+                                    @endif
+                                    {{-- <button type="button" class="btn btn-secondary btn-sm printBtn" data-id="{{ $item->id }}">Print</button> --}}
                                 </td>
                             </tr>
                         @endforeach
@@ -102,7 +97,7 @@
                     @method('PUT')
                 @endif
 
-                <div class="modal-header">
+                <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">{{ $isEdit ? 'Edit' : 'Add' }} Stock Item</h5>
                     <a href="{{ route('stock-items.index') }}" class="btn-close"></a>
                 </div>
@@ -156,7 +151,7 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-success">{{ $isEdit ? 'Update' : 'Save' }}</button>
+                    <button type="submit" class="btn btn-primary">{{ $isEdit ? 'Update' : 'Save' }}</button>
                     <a href="{{ route('stock-items.index') }}" class="btn btn-secondary">Cancel</a>
                 </div>
             </form>
@@ -164,12 +159,12 @@
     </div>
 
     <!-- Variation Modal -->
-<div class="modal fade" id="variationModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade mt-3" id="variationModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <div class="modal-header">
+      <div class="modal-header bg-primary text-white">
         <h5 class="modal-title">Product Variations</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body" id="variationBody">
       </div>
@@ -258,11 +253,11 @@
     </script>
 
 <script>
-  function showVariations(productId) {
-    $.get(`/products/${productId}/variations`, function(data) {
-      $('#variationBody').html(data);
-      $('#variationModal').modal('show');
+  function showVariations(stockItemId) {
+    $.get(`/stock-items/${stockItemId}/variation`, function(data) {
+        $('#variationBody').html(data);
+        $('#variationModal').modal('show');
     });
-  }
+}
 </script>
 @endpush

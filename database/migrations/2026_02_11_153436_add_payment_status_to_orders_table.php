@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('stock_items', function (Blueprint $table) {
-        $table->string('color')->nullable()->after('unit');
-        $table->string('size')->nullable()->after('color');
+        Schema::table('orders', function (Blueprint $table) {
+            $table->enum('payment_status', ['pending', 'paid', 'failed'])->default('pending')->after('status');
         });
     }
 
@@ -22,9 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('stock_items', function (Blueprint $table) {
-        $table->dropColumn('color');
-        $table->dropColumn('size');
+        Schema::table('orders', function (Blueprint $table) {
+            $table->dropColumn('payment_status');
         });
     }
 };

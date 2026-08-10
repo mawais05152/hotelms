@@ -21,7 +21,7 @@
                 <thead class="table-dark">
                     <tr>
                         <th>ID</th>
-                        <th>Unit</th>
+                        <th>Color</th>
                         <th>Size</th>
                         <th>Action</th>
                     </tr>
@@ -58,7 +58,7 @@
                                 </div>
                                 <div class="modal-body">
                                     <div class="mb-3">
-                                        <label>Unit</label>
+                                        <label>Color</label>
                                         <input type="text" name="unit" class="form-control" value="{{ $variation->unit }}" required>
                                     </div>
                                     <div class="mb-3">
@@ -91,7 +91,7 @@
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label>Unit</label>
+                    <label>Color</label>
                     <input type="text" name="unit" class="form-control" required>
                 </div>
                 <div class="mb-3">

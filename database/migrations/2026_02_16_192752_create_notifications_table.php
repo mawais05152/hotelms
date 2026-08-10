@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('dish_variations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('mess_menu_id')->constrained('mess_menus')->onDelete('cascade')->nullable();
-            $table->string('name'); // Half, Full
-            $table->decimal('price', 8, 2);
+        Schema::create('notifications', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->string('type');
+            $table->morphs('notifiable');
+            $table->text('data');
+            $table->timestamp('read_at')->nullable();
             $table->timestamps();
         });
     }
@@ -25,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('dish_variations');
+        Schema::dropIfExists('notifications');
     }
 };

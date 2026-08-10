@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
             $table->enum('status', ['pending', 'paid' ,'taken', 'delivered', 'completed', 'cancelled', 'replaced']);
+            $table->timestamp('created_at')->nullable();
             $table->unsignedBigInteger('delivered_by')->nullable();
             $table->timestamp('updated_at')->useCurrent();
             $table->foreign('delivered_by')->references('id')->on('users')->nullOnDelete();

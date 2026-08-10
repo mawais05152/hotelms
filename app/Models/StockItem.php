@@ -9,19 +9,7 @@ class StockItem extends Model
 {
     use HasFactory;
 
-        protected $fillable = [
-        'item_type',
-        'product_id',
-        'asset_id',
-        'name',
-        'total_quantity',
-        'available_qty',
-        'damaged_quantity',
-        'price',
-        'unit',
-        'color',
-        'size',
-    ];
+    protected $fillable = ['item_type','product_id','asset_id', 'variation_id','name','total_quantity','available_qty','damaged_quantity','price','unit','color','size',];
 
 
 
@@ -31,9 +19,14 @@ class StockItem extends Model
     }
 
     public function product()
-    {
-        return $this->belongsTo(Product::class, 'product_id');
-    }
+{
+    return $this->belongsTo(Product::class, 'product_id');
+}
+
+public function variation()
+{
+    return $this->belongsTo(Variation::class, 'variation_id');
+}
 
     public function asset()
     {

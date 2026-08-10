@@ -14,21 +14,9 @@ return new class extends Migration
         Schema::create('restaurant_assets', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
-            $table->string('category'); // ✅ Added category
+            $table->string('category');
             $table->timestamps();
         });
-        // Schema::create('restaurant_assets', function (Blueprint $table) {
-        //     $table->id();
-        //     $table->string('name')->unique();
-        //     $table->string('asset_type');
-        //     $table->integer('total_quantity');
-        //     $table->decimal('price', 10, 2)->default(0);
-        //     $table->string('supplier_name');
-        //     $table->string('warehouse_name');
-        //     $table->date('purchase_date');
-        //     $table->text('notes')->nullable();
-        //     $table->timestamps();
-        // });
     }
 
     /**

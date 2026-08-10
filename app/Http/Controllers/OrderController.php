@@ -1,58 +1,31 @@
 <?php
 
 namespace App\Http\Controllers;
-
-use Stripe\Stripe;
-use Stripe\Customer;
-use App\Models\Order;
-use Stripe\PaymentIntent;
-use App\Events\OrderPlaced;
-use App\Models\OrderStatus;
-use App\Models\BookingTable;
+use App\Events\OrderBooked;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use App\Models\{User, Category, Product, MessMenu, OrderItem, StockItem, Variation, DishVariation};
+use Illuminate\Support\Facades\{DB,Log,Auth};
+use Stripe\Exception\CardException;
+use Stripe\{Stripe,Card,PaymentIntent,Customer};
+use App\Models\{User,BookingTable,Category,Product,MessMenu,StockItem,Variation,Order,OrderStatus};
+use App\Notifications\OrderPaidNotification;
+use Illuminate\Support\Facades\Notification;
 
 class OrderController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-
-    // public function index($order_id = null, Request $request)
     public function index(Request $request, $order_id = null)
     {
-        $pendingTableIds = Order::where('status', 'Pending')->pluck('booking_id')->toArray();
-
+        $pendingTableIds = Order::whereIn('status', ['pending', 'taken', 'delivered'])->whereNotNull('booking_id')->pluck('booking_id')->unique()->values()->toArray();
         $categories = Category::get();
         $products = Product::all();
-        $dishesCategoryId = Category::where('name', 'Dishes')->first()->id;
-
-        $orders = Order::with([
-            'bookingTable',
-            'orderedBy',
-            'deliveredBy',
-            'orderItems.product.category',
-            'orderItems.messMenu',
-            'orderItems.messMenu.dishVariation',
-        ])->get();
-
+        $variations = Variation::all();
+        $dishesCategory = Category::where('name', 'Dishes')->first();
+        $dishesCategoryId = $dishesCategory ? $dishesCategory->id : null;
+        $orders = Order::with(['bookingTable','orderedBy','deliveredBy','product.variation', 'variation'])->get();
         $tables = BookingTable::all();
         $users = User::all();
         $messMenus = MessMenu::all();
 
-        return view('orders.index', compact(
-            'orders',
-            'tables',
-            'users',
-            'categories',
-            'products',
-            'order_id',
-            'pendingTableIds',
-            'messMenus',
-            'dishesCategoryId'
-        ));
+        return view('orders.index', compact('orders','tables','users','categories','products','order_id','pendingTableIds','messMenus','dishesCategoryId','variations'));
     }
 
     public function storeStatus(Request $request, Order $order)
@@ -62,10 +35,7 @@ class OrderController extends Controller
             'delivered_by' => 'nullable|exists:users,id',
         ]);
 
-        $existingStatus = OrderStatus::where('order_id', $order->id)
-            ->where('status', $request->status)
-            ->first();
-
+        $existingStatus = OrderStatus::where('order_id', $order->id)->where('status', $request->status)->first();
         if ($existingStatus) {
             $existingStatus->update([
                 'delivered_by' => $request->delivered_by,
@@ -86,7 +56,6 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Order status updated successfully.');
     }
 
-
     public function create()
     {
         $pendingTableIds = Order::where('status', 'Pending')->pluck('booking_id')->toArray();
@@ -103,119 +72,59 @@ class OrderController extends Controller
             'booking_id' => 'required',
             'person' => 'required',
             'order_type' => 'required',
-            'status' => 'required',
+            'status' => 'required|in:pending,completed,cancelled,replaced',
             'order_by' => 'nullable',
             'delivered_by' => 'nullable',
+            'category_id' => 'required',
             'product_id' => 'required|array',
             'variation_id' => 'nullable|array',
             'quantity' => 'required|array',
             'price' => 'required|array',
         ]);
-        $categoryId = $request->category_id;
-        $category = Category::find($categoryId);
 
-        DB::beginTransaction();
+        if (!is_array($request->product_id) || count($request->product_id) == 0) {
+            return response()->json(['status' => 'error','message' => 'Please select at least one product.']);
+        }
+
         try {
-            if ($category->name == 'Dishes') {
-                foreach ($request->product_id as $key => $product_id) {
-                    $qty = $request->quantity[$key] ?? 0;
-                    $messMenu = MessMenu::find($product_id);
-                    if (!$messMenu) {
-                        throw new \Exception("Menu item not found for product ID: $product_id");
+            $orders = [];
+            DB::transaction(function () use ($request, &$orders) {
+                foreach ($request->product_id as $i => $productId) {
+                    $qty = $request->quantity[$i];
+                    $price = $request->price[$i];
+                    $variationId = $request->variation_id[$i] ?? null;
+                    $stock = StockItem::where('product_id', $productId)->where('variation_id', $variationId)->first();
+                    if (!$stock || $stock->available_qty < $qty) {
+                        throw new \Exception('Stock not available for product: ' . $productId);
                     }
-
-                    $variationId = $request->variation_id[$key] ?? null;
-                    if ($variationId) {
-                        $dishVariation = DishVariation::where('id', $variationId)
-                            ->where('mess_menu_id', $product_id)
-                            ->first();
-                        if (!$dishVariation) {
-                            throw new \Exception("Variation not found for product ID: $product_id");
-                        }
-                    }
+                    $orders[] = Order::create([
+                        'booking_id'   => $request->booking_id,
+                        'person'       => $request->person,
+                        'category_id'  => $request->category_id,
+                        'product_id'   => $productId,
+                        'variation_id' => $variationId,
+                        'quantity'     => $qty,
+                        'price'        => $price / $qty,
+                        'sub_total'    => $price,
+                        'order_type'   => $request->order_type,
+                        'order_by'     => $request->order_by,
+                        'delivered_by' => $request->delivered_by,
+                        'date'         => $request->date,
+                        'time'         => $request->time,
+                        'status'       => $request->status,
+                    ]);
+                    $stock->available_qty -= $qty;
+                    $stock->total_quantity -= $qty;
+                    $stock->save();
                 }
-
-                // Create new order
-                $order = new Order();
-                $order->booking_id = $request->booking_id;
-                $order->person = $request->person;
-                $order->order_type = $request->order_type;
-                $order->time = $request->time;
-                $order->date = $request->date;
-                $order->status = $request->status;
-                $order->order_by = $request->order_by;
-                $order->delivered_by = $request->delivered_by;
-                $order->save();
-
-                // Create order items
-                foreach ($request->product_id as $key => $product_id) {
-                    $qty = $request->quantity[$key] ?? 0;
-                    $price = $request->price[$key] ?? 0;
-                    $variationId = $request->variation_id[$key] ?? null;
-
-                    $orderItem = new OrderItem();
-                    $orderItem->order_id = $order->id;
-                    $orderItem->product_id = $product_id;
-                    $orderItem->category_id = $categoryId;
-                    $orderItem->variation_id = $variationId;
-                    $orderItem->quantity = $qty;
-                    $orderItem->price = $price;
-                    $orderItem->sub_total = $qty * $price;
-                    $orderItem->save();
-
-                    $messMenu = MessMenu::find($product_id);
-                    $messMenu->available_quantity -= $qty;
-                    $messMenu->save();
-                }
-            } else {
-                foreach ($request->product_id as $key => $product_id) {
-                    $qty = $request->quantity[$key] ?? 0;
-                    $stockItem = StockItem::where('product_id', $product_id)->first();
-
-                    if (!$stockItem || $stockItem->available_qty < $qty) {
-                        throw new \Exception("Insufficient stock for product ID: $product_id");
-                    }
-                }
-
-                $order = new Order();
-                $order->booking_id = $request->booking_id;
-                $order->person = $request->person;
-                $order->order_type = $request->order_type;
-                $order->time = $request->time;
-                $order->date = $request->date;
-                $order->status = $request->status;
-                $order->order_by = $request->order_by;
-                $order->delivered_by = $request->delivered_by;
-                $order->save();
-
-                // Create order items and update stock
-                foreach ($request->product_id as $key => $product_id) {
-                    $qty = $request->quantity[$key] ?? 0;
-                    $price = $request->price[$key] ?? 0;
-                    $variation_id = $request->variation_id[$key] ?? null;
-
-                    $stockItem = StockItem::where('product_id', $product_id)->first();
-                    $stockItem->available_qty -= $qty;
-                    $stockItem->save();
-
-                    $orderItem = new OrderItem();
-                    $orderItem->order_id = $order->id;
-                    $orderItem->product_id = $product_id;
-                    $orderItem->category_id = Product::find($product_id)->category_id;
-                    $orderItem->variation_id = $variation_id;
-                    $orderItem->quantity = $qty;
-                    $orderItem->price = $price;
-                    $orderItem->sub_total = $qty * $price;
-                    $orderItem->save();
-                }
+            });
+             foreach ($orders as $order) {
+                event(new OrderBooked($order));
             }
-            //  event(new OrderPlaced($order));
-            DB::commit();
-            event(new OrderPlaced($order));
-            return redirect()->route('orders.index')->with('success', 'Order saved successfully.');
+            // return redirect()->route('orders.index')->with('success', 'Order created successfully.');
+            return response()->json(['status' => 'success','message' => 'Order created successfully.','orders' => $orders]);
         } catch (\Exception $e) {
-            DB::rollback();
-            return back()->withErrors(['error' => 'Failed to save order. ' . $e->getMessage()]);
+            return response()->json(['status' => 'error','message' => $e->getMessage()]);
         }
     }
 
@@ -247,16 +156,6 @@ class OrderController extends Controller
         }
     }
 
-    public function getDishVariations($dishId)
-    {
-        $variations = DishVariation::where('mess_menu_id', $dishId)->select('id','variation_name','price')->get();
-        $data = [];
-        if(!is_null($variations)) {
-            $data = $variations->toArray();
-        }
-        return response()->json($data);
-    }
-
     public function getProductVariations($productId)
     {
         $variations = Variation::where('product_id', $productId)->get();
@@ -274,40 +173,19 @@ class OrderController extends Controller
 
     public function edit(Order $order)
     {
-
         $tables = BookingTable::all();
         return view('orders.edit', compact('order', 'tables'));
     }
 
     public function show($id)
     {
-        $order = Order::with(['bookingTable', 'orderItems.product'])->find($id);
-        if (!$order) {
-            return response()->json(['error' => 'Order not found'], 404);
-        }
-
-        $order_items = $order->orderItems->map(function ($item) {
-            return [
-                'product_name' => $item->product->name ?? 'N/A',
-                'quantity' => $item->quantity,
-                'price' => $item->price,
-            ];
-        });
-
-        return response()->json([
-            'id' => $order->id,
-            'date' => $order->date,
-            'time' => $order->time,
-            'table_number' => $order->bookingTable->table_number ?? 'N/A',
-            'order_type' => $order->order_type,
-            'status' => $order->status,
-            'sub_total' => $order->orderItems->sum('price'),
-            'order_items' => $order_items,
-        ]);
+        $users = User::all();
+        $order = Order::findorFail($id);
+        return view('orders.show',compact('order','users'));
     }
 
 
-    public function update(Request $request, Order $order)
+   public function update(Request $request, Order $order)
     {
         $request->validate([
             'booking_id' => 'required',
@@ -321,6 +199,7 @@ class OrderController extends Controller
             'price' => 'required|array',
         ]);
 
+        $order = Order::findOrFail($order->id);
         $order->booking_id = $request->booking_id;
         $order->person = $request->person;
         $order->order_type = $request->order_type;
@@ -329,23 +208,13 @@ class OrderController extends Controller
         $order->status = $request->status;
         $order->order_by = $request->order_by;
         $order->delivered_by = $request->delivered_by;
+        $order->product_id = json_encode($request->product_id);
+        $order->quantity = json_encode($request->quantity);
+        $order->price = json_encode($request->price);
+        $order->sub_total = array_sum($request->price);
         $order->save();
-
-        OrderItem::where('order_id', $order->id)->delete();
-
-        foreach ($request->product_id as $key => $product_id) {
-            $orderItem = new OrderItem();
-            $orderItem->order_id = $order->id;
-            $orderItem->product_id = $product_id;
-            $orderItem->category_id = Product::find($product_id)->category_id;
-            $orderItem->quantity = $request->quantity[$key];
-            $orderItem->price = $request->price[$key];
-            $orderItem->sub_total = $request->sub_total;
-            $orderItem->save();
-        }
         return redirect()->route('orders.index')->with('success', 'Order updated successfully.');
     }
-
 
     public function destroy(Order $order)
     {
@@ -354,8 +223,7 @@ class OrderController extends Controller
     }
     public function print(Request $request)
     {
-        $order = Order::with(['bookingTable', 'orderedBy', 'deliveredBy', 'orderItems.product.category'])
-            ->findOrFail($request->order_id);
+        $order = Order::with(['bookingTable', 'orderedBy', 'deliveredBy', 'orderItems.product.category'])->findOrFail($request->order_id);
         return view('orders.print', compact('order'));
     }
 
@@ -371,43 +239,67 @@ class OrderController extends Controller
             'updated_by' => auth()->id(),
             'updated_at' => now(),
         ]);
-
         return back()->with('success', 'Status updated and history saved.');
     }
 
     public function processOrders($id)
     {
         $order = Order::findOrFail($id);
-
         return view('orders.pay.create', compact('order'));
     }
 
     public function ordersPay(Request $request, $id)
     {
         $order = Order::findOrFail($id);
-        $orderAmount = $order->orderItems->sum('price');
+        $orderAmount = $order->sub_total ?? 0;
 
         $request->validate([
             'payment_method' => 'required',
         ]);
 
-        \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
-
+        Stripe::setApiKey(env('STRIPE_SECRET'));
         try {
-            \Stripe\PaymentIntent::create([
+            $customer = Customer::create([
+                'name' => $request->card_holder_name,
+            ]);
+            \Stripe\PaymentMethod::retrieve($request->payment_method)->attach([
+                'customer' => $customer->id,
+            ]);
+            $customer->invoice_settings = ['default_payment_method' => $request->payment_method];
+            $customer->save();
+
+            $paymentIntent = PaymentIntent::create([
                 'amount' => $orderAmount * 100,
                 'currency' => 'usd',
-                'description' => 'Order Payment',
+                'customer' => $customer->id,
                 'payment_method' => $request->payment_method,
+                'off_session' => true,
                 'confirm' => true,
-                'payment_method_types' => ['card'],
+                'description' => 'Order Payment',
             ]);
-
             $order->update(['payment_status' => 'paid']);
 
+            // Notify Admin
+            $admin = User::role('Admin')->first();
+            if ($admin) {
+                try {
+                    $admin->notify(new OrderPaidNotification($order));
+                } catch (\Exception $e) {
+                    Log::error('Notification failed: ' . $e->getMessage());
+                }
+            }
+
             return redirect()->route('orders.index')->with('success', 'Payment successful!');
-        } catch (\Stripe\Exception\CardException $e) {
+        } catch (CardException $e) {
             return back()->withErrors(['error' => 'Payment failed: ' . $e->getMessage()]);
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Something went wrong: ' . $e->getMessage()]);
         }
+    }
+
+    public function checkStock($product_id, $variation_id = null)
+    {
+        $stock = StockItem::where('product_id', $product_id)->when($variation_id, fn($q) => $q->where('variation_id', $variation_id))->first();
+        return response()->json(['stock' => $stock->balance ?? 0]);
     }
 }

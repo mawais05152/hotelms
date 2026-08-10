@@ -6,7 +6,7 @@
         <button class="btn btn-success" id="addCategoryBtn">+ Add Category</button>
     </div>
     <div class="card-body">
-        <table class="table table-striped table-bordered">
+        <table class="table table-striped table-bordered" id="categoryTable">
             <thead class="table-dark">
                 <tr>
                     <th>ID</th>
@@ -20,10 +20,7 @@
                     <td>{{ $category->id }}</td>
                     <td>{{ $category->name }}</td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-warning editCategoryBtn"
-                            data-id="{{ $category->id }}"
-                            data-name="{{ $category->name }}">Edit</button>
-
+                        <button type="button" class="btn btn-sm btn-warning editCategoryBtn" data-id="{{ $category->id }}" data-name="{{ $category->name }}">Edit</button>
                         <form action="{{ url('/categories/'.$category->id) }}" method="POST" style="display:inline-block;">
                             @csrf
                             @method('DELETE')
@@ -67,6 +64,22 @@
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+@push('scripts')
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+@endpush
+<script>
+$(document).ready(function() {
+    $('#categoryTable').DataTable({
+        "paging": true,
+        "searching": true,
+        "ordering": true,
+        "info": true,
+        "responsive": true
+    });
+});
+</script>
 
 <script>
 $(document).ready(function(){

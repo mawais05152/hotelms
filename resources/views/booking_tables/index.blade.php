@@ -23,12 +23,11 @@
     </div>
 
     <div class="card-body">
-        <table class="table table-bordered table-striped">
+        <table class="table table-bordered table-striped" id="bookingTable">
             <thead class="table-dark">
                 <tr>
                     <th>ID</th>
                     <th>Table Number</th>
-                    <th>Status</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -37,13 +36,8 @@
                 <tr>
                     <td>{{ $table->id }}</td>
                     <td>{{ $table->table_number }}</td>
-                    <td>{{ $table->status }}</td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-warning editTableBtn"
-                            data-id="{{ $table->id }}"
-                            data-number="{{ $table->table_number }}"
-                            data-status="{{ $table->status }}">Edit</button>
-
+                        <button type="button" class="btn btn-sm btn-warning editTableBtn" data-id="{{ $table->id }}" data-number="{{ $table->table_number }}" data-status="{{ $table->status }}">Edit</button>
                         <form action="{{ url('/bookingtables/'.$table->id) }}" method="POST" style="display:inline-block;">
                             @csrf
                             @method('DELETE')
@@ -74,14 +68,6 @@
                         <label class="form-label">Table Number</label>
                         <input type="text" name="table_number" class="form-control" required>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Status</label>
-                        <select name="status" class="form-select" required>
-                            <option value="">Select Status</option>
-                            <option value="Available">Available</option>
-                            <option value="Occupied">Occupied</option>
-                        </select>
-                    </div>
                 </div>
 
                 <div class="modal-footer">
@@ -95,7 +81,22 @@
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+@push('scripts')
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+@endpush
+<script>
+$(document).ready(function() {
+    $('#bookingTable').DataTable({
+        "paging": true,
+        "searching": true,
+        "ordering": true,
+        "info": true,
+        "responsive": true
+    });
+});
+</script>
 <script>
 $(document).ready(function(){
 
@@ -110,20 +111,14 @@ $(document).ready(function(){
     $('.editTableBtn').click(function(){
         let id = $(this).data('id');
         let number = $(this).data('number');
-        let status = $(this).data('status');
-
         $('#table_id').val(id);
         $('input[name="table_number"]').val(number);
-        $('select[name="status"]').val(status);
-
         $('#tableForm').attr('action', '/bookingtables/' + id);
-
         if($('#tableForm input[name="_method"]').length == 0){
             $('#tableForm').append('<input type="hidden" name="_method" value="PUT">');
         } else {
             $('#tableForm input[name="_method"]').val('PUT');
         }
-
         $('#tableModal').modal('show');
     });
 

@@ -59,11 +59,6 @@
 
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Product Name</label>
-                        <input type="text" name="name" class="form-control" required>
-                    </div>
-
-                    <div class="mb-3">
                         <label class="form-label">Category</label>
                         <select name="category_id" class="form-select" required>
                             <option value="">Select Category</option>
@@ -74,12 +69,24 @@
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label">Product Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Product Type</label>
+                        <select name="product_type" class="form-select" required>
+                            <option value="purchased">Purchased</option>
+                            <option value="inhouse">In-House</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Price</label>
                         <input type="number" step="0.01" name="price" class="form-control" required>
                     </div>
                 </div>
 
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Product</button>
                 </div>
             </form>

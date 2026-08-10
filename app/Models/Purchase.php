@@ -18,21 +18,13 @@ class Purchase extends Model
     'purchase_date',
     'notes',
 ];
-    //     protected $fillable = [
-    //     'item_type',
-    //     'invoice_no',
-    //     'name',
-    //     'asset_type',
-    //     'total_quantity',
-    //     'price',
-    //     'supplier_name',
-    //     'warehouse_name',
-    //     'purchase_date',
-    //     'notes',
-    // ];
 public function StockItem()
 {
     return $this->hasOne(StockItem::class, 'item_id')->where('item_type', 'asset');
+}
+public function variation()
+{
+    return $this->belongsTo(Variation::class, 'variation_id');
 }
 // public function product()
 // {

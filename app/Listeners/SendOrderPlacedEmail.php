@@ -26,7 +26,8 @@ class SendOrderPlacedEmail
     public function handle(OrderPlaced $event): void
     {
         $order = $this->order;
-        Mail::to('muhammadawais05152@gmail.com')->send(new OrderPlacedMail($order));
+        Mail::to('muhammadawais05152@gmail.com')->send(new OrderPlacedMail($order->customer->email));
+        // Mail::to('muhammadawais05152@gmail.com')->send(new OrderPlacedMail($order));
         // Mail::to($order->customer->email)->send(new OrderPlacedMail($order));
     }
 }
